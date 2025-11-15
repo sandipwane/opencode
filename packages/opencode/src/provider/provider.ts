@@ -74,17 +74,24 @@ export namespace Provider {
       }
     },
     "amazon-bedrock": async () => {
-      if (!process.env["AWS_PROFILE"] && !process.env["AWS_ACCESS_KEY_ID"] && !process.env["AWS_BEARER_TOKEN_BEDROCK"])
-        return { autoload: false }
+      // Helper to check OpenCode-specific env vars first, then fall back to standard AWS vars
+      const getEnv = (key: string) => process.env[`${Global.getEnvPrefix()}_${key}`] ?? process.env[key]
 
-      const region = process.env["AWS_REGION"] ?? "us-east-1"
+      const profile = getEnv("AWS_PROFILE")
+      const accessKeyId = getEnv("AWS_ACCESS_KEY_ID")
+      const bearerToken = getEnv("AWS_BEARER_TOKEN_BEDROCK")
+
+      if (!profile && !accessKeyId && !bearerToken) return { autoload: false }
+
+      const region = getEnv("AWS_REGION") ?? "us-east-1"
 
       const { fromNodeProviderChain } = await import(await BunProc.install("@aws-sdk/credential-providers"))
+
       return {
         autoload: true,
         options: {
           region,
-          credentialProvider: fromNodeProviderChain(),
+          credentialProvider: fromNodeProviderChain(profile ? { profile } : undefined),
         },
         async getModel(sdk: any, modelID: string) {
           let regionPrefix = region.split("-")[0]

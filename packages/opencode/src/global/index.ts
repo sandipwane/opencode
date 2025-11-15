@@ -18,6 +18,8 @@ export namespace Global {
     config,
     state,
   } as const
+
+  export const getEnvPrefix = () => app.toUpperCase()
 }
 
 await Promise.all([
