@@ -16,6 +16,22 @@ export const GlobTool = Tool.define("glob", {
         `The directory to search in. If not specified, the current working directory will be used. IMPORTANT: Omit this field to use the default directory. DO NOT enter "undefined" or "null" - simply omit it for the default behavior. Must be a valid directory path if provided.`,
       ),
   }),
+  tags: ["file", "search", "pattern"],
+  allowedCallers: ["direct", "code_execution"],
+  inputExamples: [
+    {
+      description: "Find all TypeScript files",
+      input: { pattern: "**/*.ts" },
+    },
+    {
+      description: "Find test files in a directory",
+      input: { pattern: "**/*.test.{ts,tsx}", path: "src" },
+    },
+    {
+      description: "Find config files",
+      input: { pattern: "*.{json,yaml,yml}" },
+    },
+  ],
   async execute(params) {
     let search = params.path ?? Instance.directory
     search = path.isAbsolute(search) ? search : path.resolve(Instance.directory, search)

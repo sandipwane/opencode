@@ -54,6 +54,22 @@ export const BashTool = Tool.define("bash", {
         "Clear, concise description of what this command does in 5-10 words. Examples:\nInput: ls\nOutput: Lists files in current directory\n\nInput: git status\nOutput: Shows working tree status\n\nInput: npm install\nOutput: Installs package dependencies\n\nInput: mkdir foo\nOutput: Creates directory 'foo'",
       ),
   }),
+  tags: ["shell", "command", "system", "execute"],
+  allowedCallers: ["direct", "code_execution"],
+  inputExamples: [
+    {
+      description: "Run npm install",
+      input: { command: "npm install", description: "Install package dependencies" },
+    },
+    {
+      description: "Check git status",
+      input: { command: "git status", description: "Show working tree status" },
+    },
+    {
+      description: "Run tests with timeout",
+      input: { command: "npm test", timeout: 120000, description: "Run test suite" },
+    },
+  ],
   async execute(params, ctx) {
     const timeout = Math.min(params.timeout ?? DEFAULT_TIMEOUT, MAX_TIMEOUT)
     const tree = await parser().then((p) => p.parse(params.command))

@@ -12,6 +12,22 @@ export const GrepTool = Tool.define("grep", {
     path: z.string().optional().describe("The directory to search in. Defaults to the current working directory."),
     include: z.string().optional().describe('File pattern to include in the search (e.g. "*.js", "*.{ts,tsx}")'),
   }),
+  tags: ["search", "code", "regex", "content"],
+  allowedCallers: ["direct", "code_execution"],
+  inputExamples: [
+    {
+      description: "Search for function definition",
+      input: { pattern: "function\\s+processData" },
+    },
+    {
+      description: "Search in TypeScript files only",
+      input: { pattern: "import.*from", include: "*.ts" },
+    },
+    {
+      description: "Search in specific directory",
+      input: { pattern: "TODO:", path: "src/components" },
+    },
+  ],
   async execute(params) {
     if (!params.pattern) {
       throw new Error("pattern is required")

@@ -509,6 +509,31 @@ export namespace Config {
         })
         .optional(),
       tools: z.record(z.string(), z.boolean()).optional(),
+      advanced_tools: z
+        .object({
+          tool_search: z
+            .boolean()
+            .optional()
+            .default(true)
+            .describe("Enable the tool search feature for dynamic tool discovery"),
+          programmatic_execution: z
+            .boolean()
+            .optional()
+            .default(true)
+            .describe("Enable programmatic tool calling via code execution"),
+          defer_loading: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe("Enable deferred loading for tools marked with deferLoading: true"),
+          include_examples: z
+            .boolean()
+            .optional()
+            .default(true)
+            .describe("Include input examples in tool descriptions"),
+        })
+        .optional()
+        .describe("Advanced tool use configuration for tool search, programmatic execution, and deferred loading"),
       experimental: z
         .object({
           hook: z

@@ -48,6 +48,7 @@ import { ulid } from "ulid"
 import { spawn } from "child_process"
 import { Command } from "../command"
 import { $ } from "bun"
+import { Config } from "../config/config"
 
 export namespace SessionPrompt {
   const log = Log.create({ service: "session.prompt" })
@@ -422,17 +423,37 @@ export namespace SessionPrompt {
     processor: Processor
   }) {
     const tools: Record<string, AITool> = {}
+    const config = await Config.get()
+    const advancedConfig = config.advanced_tools ?? {
+      tool_search: true,
+      programmatic_execution: true,
+      defer_loading: false,
+      include_examples: true,
+    }
     const enabledTools = pipe(
       input.agent.tools,
       mergeDeep(await ToolRegistry.enabled(input.providerID, input.modelID, input.agent)),
       mergeDeep(input.tools ?? {}),
     )
+
+    // Disable advanced tools based on config
+    if (!advancedConfig.tool_search) {
+      enabledTools["tool_search"] = false
+    }
+    if (!advancedConfig.programmatic_execution) {
+      enabledTools["code_execute"] = false
+    }
+
     for (const item of await ToolRegistry.tools(input.providerID, input.modelID)) {
       if (Wildcard.all(item.id, enabledTools) === false) continue
       const schema = ProviderTransform.schema(input.providerID, input.modelID, z.toJSONSchema(item.parameters))
+      // Include input examples in description if configured
+      const description = advancedConfig.include_examples
+        ? ToolRegistry.formatDescription(item)
+        : item.description
       tools[item.id] = tool({
         id: item.id as any,
-        description: item.description,
+        description,
         inputSchema: jsonSchema(schema as any),
         async execute(args, options) {
           await Plugin.trigger(

@@ -11,13 +11,27 @@ import { Instance } from "../project/instance"
 const DEFAULT_READ_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
 
-export const ReadTool = Tool.define("read", {
-  description: DESCRIPTION,
-  parameters: z.object({
-    filePath: z.string().describe("The path to the file to read"),
-    offset: z.coerce.number().describe("The line number to start reading from (0-based)").optional(),
-    limit: z.coerce.number().describe("The number of lines to read (defaults to 2000)").optional(),
-  }),
+export const ReadTool = Tool.define(
+  "read",
+  {
+    description: DESCRIPTION,
+    parameters: z.object({
+      filePath: z.string().describe("The path to the file to read"),
+      offset: z.coerce.number().describe("The line number to start reading from (0-based)").optional(),
+      limit: z.coerce.number().describe("The number of lines to read (defaults to 2000)").optional(),
+    }),
+    tags: ["file", "read", "code"],
+    allowedCallers: ["direct", "code_execution"],
+    inputExamples: [
+      {
+        description: "Read entire file",
+        input: { filePath: "/path/to/file.ts" },
+      },
+      {
+        description: "Read specific lines",
+        input: { filePath: "/path/to/file.ts", offset: 100, limit: 50 },
+      },
+    ],
   async execute(params, ctx) {
     let filepath = params.filePath
     if (!path.isAbsolute(filepath)) {
