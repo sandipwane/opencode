@@ -382,6 +382,11 @@ export namespace ProviderTransform {
           }
         }
 
+        // Kimi models have always-on reasoning, no configurable variants
+        if (model.api.id.includes("kimi")) {
+          return {}
+        }
+
         // For Amazon Nova models, use reasoningConfig with maxReasoningEffort
         return Object.fromEntries(
           WIDELY_SUPPORTED_EFFORTS.map((effort) => [
