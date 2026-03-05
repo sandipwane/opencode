@@ -13,6 +13,7 @@ import PROMPT_BEAST from "./prompt/beast.txt"
 import PROMPT_GEMINI from "./prompt/gemini.txt"
 import PROMPT_ANTHROPIC_SPOOF from "./prompt/anthropic_spoof.txt"
 
+import PROMPT_KIMI from "./prompt/kimi.txt"
 import PROMPT_CODEX from "./prompt/codex.txt"
 import PROMPT_CODEX_INSTRUCTIONS from "./prompt/codex_header.txt"
 import type { Provider } from "@/provider/provider"
@@ -34,7 +35,7 @@ export namespace SystemPrompt {
       return [PROMPT_BEAST]
     if (model.api.id.includes("gemini-")) return [PROMPT_GEMINI]
     if (model.api.id.includes("claude")) return [PROMPT_ANTHROPIC]
-    if (model.api.id.includes("kimi")) return [PROMPT_ANTHROPIC]
+    if (model.api.id.includes("kimi")) return [PROMPT_KIMI]
     return [PROMPT_ANTHROPIC_WITHOUT_TODO]
   }
 
