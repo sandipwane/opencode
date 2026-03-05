@@ -671,6 +671,17 @@ export namespace ProviderTransform {
     return schema
   }
 
+  export function stopSequences(model: Provider.Model): string[] | undefined {
+    // Kimi on Bedrock: Converse API intermittently leaks internal tool-call tokens
+    // into text output instead of parsing them as tool calls (vercel/ai#11409).
+    // Adding these as stop sequences halts generation before the full malformed
+    // tool call is emitted, giving the agent loop a chance to retry.
+    if (model.api.npm === "@ai-sdk/amazon-bedrock" && model.api.id.includes("kimi")) {
+      return ["<|tool_call_begin|>"]
+    }
+    return undefined
+  }
+
   export function error(providerID: string, error: APICallError) {
     let message = error.message
     if (providerID === "github-copilot" && message.includes("The requested model is not supported")) {

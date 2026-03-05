@@ -1015,6 +1015,40 @@ describe("ProviderTransform.variants", () => {
         },
       })
     })
+
+    test("kimi models return empty variants (always-on reasoning)", () => {
+      const model = createMockModel({
+        id: "bedrock/kimi-k2.5",
+        providerID: "amazon-bedrock",
+        api: {
+          id: "moonshotai.kimi-k2.5",
+          url: "https://bedrock.amazonaws.com",
+          npm: "@ai-sdk/amazon-bedrock",
+        },
+      })
+      const result = ProviderTransform.variants(model)
+      expect(result).toEqual({})
+    })
+
+    test("anthropic models on bedrock return reasoningConfig variants", () => {
+      const model = createMockModel({
+        id: "bedrock/claude-4",
+        providerID: "amazon-bedrock",
+        api: {
+          id: "anthropic.claude-4",
+          url: "https://bedrock.amazonaws.com",
+          npm: "@ai-sdk/amazon-bedrock",
+        },
+      })
+      const result = ProviderTransform.variants(model)
+      expect(Object.keys(result)).toEqual(["high", "max"])
+      expect(result.high).toEqual({
+        reasoningConfig: {
+          type: "enabled",
+          budgetTokens: 16000,
+        },
+      })
+    })
   })
 
   describe("@ai-sdk/google", () => {
@@ -1151,5 +1185,74 @@ describe("ProviderTransform.variants", () => {
       const result = ProviderTransform.variants(model)
       expect(result).toEqual({})
     })
+  })
+})
+
+describe("ProviderTransform.stopSequences", () => {
+  const createMockModel = (overrides: Partial<any> = {}): any => ({
+    id: "test/test-model",
+    providerID: "test",
+    api: {
+      id: "test-model",
+      url: "https://api.test.com",
+      npm: "@ai-sdk/openai",
+    },
+    ...overrides,
+  })
+
+  test("returns stop sequences for Kimi on Bedrock", () => {
+    const model = createMockModel({
+      id: "bedrock/kimi-k2.5",
+      providerID: "amazon-bedrock",
+      api: {
+        id: "moonshotai.kimi-k2.5",
+        url: "https://bedrock.amazonaws.com",
+        npm: "@ai-sdk/amazon-bedrock",
+      },
+    })
+    const result = ProviderTransform.stopSequences(model)
+    expect(result).toEqual(["<|tool_call_begin|>"])
+  })
+
+  test("returns undefined for non-Kimi Bedrock models", () => {
+    const model = createMockModel({
+      id: "bedrock/claude-4",
+      providerID: "amazon-bedrock",
+      api: {
+        id: "anthropic.claude-4",
+        url: "https://bedrock.amazonaws.com",
+        npm: "@ai-sdk/amazon-bedrock",
+      },
+    })
+    const result = ProviderTransform.stopSequences(model)
+    expect(result).toBeUndefined()
+  })
+
+  test("returns undefined for Kimi on non-Bedrock providers", () => {
+    const model = createMockModel({
+      id: "opencode/kimi-k2.5",
+      providerID: "opencode",
+      api: {
+        id: "kimi-k2.5",
+        url: "https://api.opencode.ai",
+        npm: "@ai-sdk/openai-compatible",
+      },
+    })
+    const result = ProviderTransform.stopSequences(model)
+    expect(result).toBeUndefined()
+  })
+
+  test("returns undefined for other providers", () => {
+    const model = createMockModel({
+      id: "openai/gpt-5",
+      providerID: "openai",
+      api: {
+        id: "gpt-5",
+        url: "https://api.openai.com",
+        npm: "@ai-sdk/openai",
+      },
+    })
+    const result = ProviderTransform.stopSequences(model)
+    expect(result).toBeUndefined()
   })
 })

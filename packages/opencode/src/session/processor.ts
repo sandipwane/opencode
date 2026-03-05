@@ -20,6 +20,21 @@ export namespace SessionProcessor {
   const DOOM_LOOP_THRESHOLD = 3
   const log = Log.create({ service: "session.processor" })
 
+  // Kimi internal tokens that leak into text when Bedrock's Converse API
+  // fails to parse tool calls (see: vercel/ai#11409)
+  const LEAKED_TOOL_TOKEN_RE = /<\|tool_call_begin\|>|<\|tool_sep\|>|<\|tool_call_end\|>|<\|im_end\|>/g
+
+  function isKimiOnBedrock(model: Provider.Model): boolean {
+    return model.api.npm === "@ai-sdk/amazon-bedrock" && model.api.id.includes("kimi")
+  }
+
+  function stripLeakedToolTokens(text: string): { text: string; hadLeakedTokens: boolean } {
+    // Strip everything from the first leaked token onwards, since it's a malformed tool call
+    const firstMatch = text.search(LEAKED_TOOL_TOKEN_RE)
+    if (firstMatch === -1) return { text, hadLeakedTokens: false }
+    return { text: text.slice(0, firstMatch).trimEnd(), hadLeakedTokens: true }
+  }
+
   export type Info = Awaited<ReturnType<typeof create>>
   export type Result = Awaited<ReturnType<Info["process"]>>
 
@@ -34,6 +49,8 @@ export namespace SessionProcessor {
     let blocked = false
     let attempt = 0
     let needsCompaction = false
+    let leakedToolTokens = false
+    const kimiOnBedrock = isKimiOnBedrock(input.model)
 
     const result = {
       get message() {
@@ -239,7 +256,25 @@ export namespace SessionProcessor {
                     usage: value.usage,
                     metadata: value.providerMetadata,
                   })
-                  input.assistantMessage.finish = value.finishReason
+                  // Kimi on Bedrock: the Converse API intermittently fails to parse tool
+                  // calls, leaking internal tokens into text (vercel/ai#11409).
+                  // Override the finish reason to "unknown" so the agent loop retries when:
+                  // 1. Leaked tool tokens were detected in text output, OR
+                  // 2. The stop sequence (<|tool_call_begin|>) fired (finish = "stop")
+                  if (
+                    kimiOnBedrock &&
+                    value.finishReason !== "tool-calls" &&
+                    (leakedToolTokens || value.finishReason === "stop")
+                  ) {
+                    log.warn("overriding finish reason due to leaked Kimi tool tokens", {
+                      original: value.finishReason,
+                      sessionID: input.sessionID,
+                    })
+                    input.assistantMessage.finish = "unknown"
+                    leakedToolTokens = false
+                  } else {
+                    input.assistantMessage.finish = value.finishReason
+                  }
                   input.assistantMessage.cost += usage.cost
                   input.assistantMessage.tokens = usage.tokens
                   await Session.updatePart({
@@ -305,6 +340,19 @@ export namespace SessionProcessor {
                 case "text-end":
                   if (currentText) {
                     currentText.text = currentText.text.trimEnd()
+
+                    // Kimi on Bedrock: strip leaked internal tool-call tokens from text
+                    if (kimiOnBedrock) {
+                      const stripped = stripLeakedToolTokens(currentText.text)
+                      if (stripped.hadLeakedTokens) {
+                        leakedToolTokens = true
+                        currentText.text = stripped.text
+                        log.warn("stripped leaked Kimi tool tokens from text", {
+                          sessionID: input.sessionID,
+                        })
+                      }
+                    }
+
                     const textOutput = await Plugin.trigger(
                       "experimental.text.complete",
                       {
