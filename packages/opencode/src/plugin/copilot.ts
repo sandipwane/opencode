@@ -1,5 +1,6 @@
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
 import { Installation } from "@/installation"
+import { Network } from "@/network"
 import { iife } from "@/util/iife"
 import { setTimeout as sleep } from "node:timers/promises"
 
@@ -193,7 +194,7 @@ export async function CopilotAuthPlugin(input: PluginInput): Promise<Hooks> {
 
             const urls = getUrls(domain)
 
-            const deviceResponse = await fetch(urls.DEVICE_CODE_URL, {
+            const deviceResponse = await Network.fetch(urls.DEVICE_CODE_URL, {
               method: "POST",
               headers: {
                 Accept: "application/json",
@@ -223,7 +224,7 @@ export async function CopilotAuthPlugin(input: PluginInput): Promise<Hooks> {
               method: "auto" as const,
               async callback() {
                 while (true) {
-                  const response = await fetch(urls.ACCESS_TOKEN_URL, {
+                  const response = await Network.fetch(urls.ACCESS_TOKEN_URL, {
                     method: "POST",
                     headers: {
                       Accept: "application/json",

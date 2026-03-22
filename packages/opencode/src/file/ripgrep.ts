@@ -13,6 +13,7 @@ import { text } from "node:stream/consumers"
 
 import { ZipReader, BlobReader, BlobWriter } from "@zip.js/zip.js"
 import { Log } from "@/util/log"
+import { Network } from "@/network"
 
 export namespace Ripgrep {
   const log = Log.create({ service: "ripgrep" })
@@ -137,6 +138,8 @@ export namespace Ripgrep {
     const filepath = path.join(Global.Path.bin, "rg" + (process.platform === "win32" ? ".exe" : ""))
 
     if (!(await Filesystem.exists(filepath))) {
+      if (Network.offline()) return undefined // fall back to system rg
+
       const platformKey = `${process.arch}-${process.platform}` as keyof typeof PLATFORM
       const config = PLATFORM[platformKey]
       if (!config) throw new UnsupportedPlatformError({ platform: platformKey })
@@ -145,7 +148,7 @@ export namespace Ripgrep {
       const filename = `ripgrep-${version}-${config.platform}.${config.extension}`
       const url = `https://github.com/BurntSushi/ripgrep/releases/download/${version}/${filename}`
 
-      const response = await fetch(url)
+      const response = await Network.fetch(url)
       if (!response.ok) throw new DownloadFailedError({ url, status: response.status })
 
       const arrayBuffer = await response.arrayBuffer()
@@ -209,8 +212,9 @@ export namespace Ripgrep {
   })
 
   export async function filepath() {
-    const { filepath } = await state()
-    return filepath
+    const result = await state()
+    if (!result) throw new Error("ripgrep is not available: air-gapped mode is enabled and no system rg found on PATH")
+    return result.filepath
   }
 
   export async function* files(input: {

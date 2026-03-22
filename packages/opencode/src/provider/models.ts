@@ -4,6 +4,7 @@ import path from "path"
 import z from "zod"
 import { Installation } from "../installation"
 import { Flag } from "../flag/flag"
+import { Network } from "@/network"
 import { lazy } from "@/util/lazy"
 import { Filesystem } from "../util/filesystem"
 
@@ -94,7 +95,7 @@ export namespace ModelsDev {
       .catch(() => undefined)
     if (snapshot) return snapshot
     if (Flag.OPENCODE_DISABLE_MODELS_FETCH) return {}
-    const json = await fetch(`${url()}/api.json`).then((x) => x.text())
+    const json = await Network.fetch(`${url()}/api.json`).then((x) => x.text())
     return JSON.parse(json)
   })
 
@@ -104,7 +105,7 @@ export namespace ModelsDev {
   }
 
   export async function refresh() {
-    const result = await fetch(`${url()}/api.json`, {
+    const result = await Network.fetch(`${url()}/api.json`, {
       headers: {
         "User-Agent": Installation.USER_AGENT,
       },

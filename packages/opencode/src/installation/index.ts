@@ -8,6 +8,7 @@ import path from "path"
 import z from "zod"
 import { BusEvent } from "@/bus/bus-event"
 import { Flag } from "../flag/flag"
+import { Network } from "@/network"
 import { Log } from "../util/log"
 
 declare global {
@@ -340,7 +341,8 @@ export namespace Installation {
     return runPromise((svc) => svc.method())
   }
 
-  export async function latest(installMethod?: Method): Promise<string> {
+  export async function latest(installMethod?: Method): Promise<string | undefined> {
+    if (Network.offline()) return undefined
     return runPromise((svc) => svc.latest(installMethod))
   }
 

@@ -31,6 +31,7 @@ import { SessionPrompt } from "@/session/prompt"
 import { setTimeout as sleep } from "node:timers/promises"
 import { Process } from "@/util/process"
 import { git } from "@/util/git"
+import { Network } from "@/network"
 
 type GitHubAuthor = {
   login: string
@@ -362,7 +363,7 @@ export const GithubInstallCommand = cmd({
             s.stop("Installed GitHub app")
 
             async function getInstallation() {
-              return await fetch(
+              return await Network.fetch(
                 `https://api.opencode.ai/get_github_app_installation?owner=${app.owner}&repo=${app.repo}`,
               )
                 .then((res) => res.json())
@@ -836,7 +837,7 @@ export const GithubRunCommand = cmd({
           const filename = path.basename(url)
 
           // Download image
-          const res = await fetch(url, {
+          const res = await Network.fetch(url, {
             headers: {
               Authorization: `Bearer ${appToken}`,
               Accept: "application/vnd.github.v3+json",
@@ -1038,14 +1039,14 @@ export const GithubRunCommand = cmd({
 
       async function exchangeForAppToken(token: string) {
         const response = token.startsWith("github_pat_")
-          ? await fetch(`${oidcBaseUrl}/exchange_github_app_token_with_pat`, {
+          ? await Network.fetch(`${oidcBaseUrl}/exchange_github_app_token_with_pat`, {
               method: "POST",
               headers: {
                 Authorization: `Bearer ${token}`,
               },
               body: JSON.stringify({ owner, repo }),
             })
-          : await fetch(`${oidcBaseUrl}/exchange_github_app_token`, {
+          : await Network.fetch(`${oidcBaseUrl}/exchange_github_app_token`, {
               method: "POST",
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -1633,7 +1634,7 @@ query($owner: String!, $repo: String!, $number: Int!) {
       async function revokeAppToken() {
         if (!appToken) return
 
-        await fetch("https://api.github.com/installation/token", {
+        await Network.fetch("https://api.github.com/installation/token", {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${appToken}`,

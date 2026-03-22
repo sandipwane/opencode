@@ -11,6 +11,7 @@ import fs from "fs/promises"
 import { lazy } from "../util/lazy"
 import { NamedError } from "@opencode-ai/util/error"
 import { Flag } from "../flag/flag"
+import { Network } from "@/network"
 import { Auth } from "../auth"
 import { Env } from "../env"
 import {
@@ -89,10 +90,11 @@ export namespace Config {
     let result: Info = {}
     for (const [key, value] of Object.entries(auth)) {
       if (value.type === "wellknown") {
+        if (Network.offline()) continue
         const url = key.replace(/\/+$/, "")
         process.env[value.key] = value.token
         log.debug("fetching remote config", { url: `${url}/.well-known/opencode` })
-        const response = await fetch(`${url}/.well-known/opencode`)
+        const response = await Network.fetch(`${url}/.well-known/opencode`)
         if (!response.ok) {
           throw new Error(`failed to fetch remote config from ${url}: ${response.status}`)
         }

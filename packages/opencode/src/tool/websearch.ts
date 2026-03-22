@@ -1,6 +1,7 @@
 import z from "zod"
 import { Tool } from "./tool"
 import DESCRIPTION from "./websearch.txt"
+import { Network } from "@/network"
 import { abortAfterAny } from "../util/abort"
 
 const API_CONFIG = {
@@ -100,7 +101,7 @@ export const WebSearchTool = Tool.define("websearch", async () => {
           "content-type": "application/json",
         }
 
-        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH}`, {
+        const response = await Network.fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH}`, {
           method: "POST",
           headers,
           body: JSON.stringify(searchRequest),
