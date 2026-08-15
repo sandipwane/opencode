@@ -1,0 +1,741 @@
+<title>opencode Atlas</title>
+
+<style>
+:root {
+  --bg: #F1F3F7; --ink: #212B3D; --muted: #5C687E; --card: #FBFCFE;
+  --line: #D7DCE5; --chip: #E9EDF3; --sel: #212B3D;
+  /* districts: top / west face / east face / line */
+  --clt:#C5E3DB; --clw:#93C4B7; --cle:#6BA294; --cll:#2E6E60;
+  --cot:#CDD1F2; --cow:#9FA6E3; --coe:#7780CE; --col:#3A4299;
+  --ctt:#DCD3F4; --ctw:#B7A6E8; --cte:#937FD6; --ctl:#5D46A8;
+  --cdt:#C8DCEF; --cdw:#97BBDD; --cde:#6F97BE; --cdl:#2F5E8F;
+  --wst:#EBDDC0; --wsw:#D4BC90; --wse:#B99E6C; --wsl:#7D6430;
+  --stt:#DBDFE6; --stw:#B4BBC7; --ste:#939CAB; --stl:#4E5A6E;
+  /* flows */
+  --fprompt:#C2417B; --ftools:#2F7D3A; --fevents:#0B8C94; --fshare:#B27718;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#12161F; --ink:#DFE5F0; --muted:#93A0B4; --card:#191F2B;
+    --line:#2B3342; --chip:#222A38; --sel:#DFE5F0;
+    --clt:#2E5A50; --clw:#23443D; --cle:#1A332E; --cll:#7FD0BE;
+    --cot:#3B4276; --cow:#2D3259; --coe:#222642; --col:#98A0F0;
+    --ctt:#46396E; --ctw:#352B54; --cte:#27203E; --ctl:#B3A0F2;
+    --cdt:#2E4A66; --cdw:#24394E; --cde:#1B2B3A; --cdl:#86B4E4;
+    --wst:#57492B; --wsw:#423721; --wse:#302818; --wsl:#D3B26A;
+    --stt:#454D5C; --stw:#363D4A; --ste:#292F3A; --stl:#93A2BA;
+    --fprompt:#E77BAC; --ftools:#6CC578; --fevents:#4FC6CE; --fshare:#E0A94E;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#12161F; --ink:#DFE5F0; --muted:#93A0B4; --card:#191F2B;
+  --line:#2B3342; --chip:#222A38; --sel:#DFE5F0;
+  --clt:#2E5A50; --clw:#23443D; --cle:#1A332E; --cll:#7FD0BE;
+  --cot:#3B4276; --cow:#2D3259; --coe:#222642; --col:#98A0F0;
+  --ctt:#46396E; --ctw:#352B54; --cte:#27203E; --ctl:#B3A0F2;
+  --cdt:#2E4A66; --cdw:#24394E; --cde:#1B2B3A; --cdl:#86B4E4;
+  --wst:#57492B; --wsw:#423721; --wse:#302818; --wsl:#D3B26A;
+  --stt:#454D5C; --stw:#363D4A; --ste:#292F3A; --stl:#93A2BA;
+  --fprompt:#E77BAC; --ftools:#6CC578; --fevents:#4FC6CE; --fshare:#E0A94E;
+}
+
+body { background: var(--bg); color: var(--ink); margin: 0;
+  font: 15px/1.55 system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+.mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; }
+
+.wrap { max-width: 1560px; margin: 0 auto; padding: 28px 24px 48px; }
+
+header.site { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 22px;
+  border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 16px; }
+header.site h1 { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 26px; margin: 0; letter-spacing: -0.5px; }
+header.site h1 .tld { color: var(--muted); font-weight: 400; }
+header.site .thesis { margin: 0; color: var(--muted); max-width: 62ch; text-wrap: balance; }
+header.site .ref { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+.toolbar .lbl { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; margin-right: 4px; }
+.chip { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  border-radius: 999px; padding: 5px 13px 5px 9px; cursor: pointer; display: inline-flex;
+  align-items: center; gap: 7px; transition: border-color .15s, background .15s; }
+.chip .sw { width: 14px; height: 0; border-top: 3px solid; border-radius: 2px; }
+.chip[data-flow="prompt"] .sw { border-color: var(--fprompt); }
+.chip[data-flow="tools"]  .sw { border-color: var(--ftools); border-top-style: solid; }
+.chip[data-flow="events"] .sw { border-color: var(--fevents); border-top-style: dashed; }
+.chip[data-flow="share"]  .sw { border-color: var(--fshare); border-top-style: dotted; }
+.chip:hover { border-color: var(--muted); }
+.chip.on[data-flow="prompt"] { border-color: var(--fprompt); background: color-mix(in srgb, var(--fprompt) 12%, var(--card)); }
+.chip.on[data-flow="tools"]  { border-color: var(--ftools);  background: color-mix(in srgb, var(--ftools) 12%, var(--card)); }
+.chip.on[data-flow="events"] { border-color: var(--fevents); background: color-mix(in srgb, var(--fevents) 12%, var(--card)); }
+.chip.on[data-flow="share"]  { border-color: var(--fshare);  background: color-mix(in srgb, var(--fshare) 12%, var(--card)); }
+.chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 20px; align-items: start; }
+@media (max-width: 980px) { .layout { grid-template-columns: 1fr; } aside.panel { position: static; } }
+
+.mapcol { min-width: 0; }
+.mapbox { border: 1px solid var(--line); border-radius: 10px; background: var(--bg);
+  overflow-x: auto; overflow-y: hidden; }
+.mapbox svg { display: block; width: 100%; min-width: 1040px; height: auto; }
+
+/* map text + shapes */
+text { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; fill: var(--ink); }
+.blab { font-size: 10.5px; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
+.dlab { font-size: 11px; letter-spacing: 0.14em; fill: var(--muted); text-transform: uppercase;
+  paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+.hoplab { font-size: 10.5px; paint-order: stroke; stroke: var(--bg); stroke-width: 3.5px; stroke-linejoin: round; }
+.lattice { stroke: var(--ink); opacity: 0.055; }
+.shadow { fill: var(--ink); opacity: 0.07; }
+.plate { fill-opacity: 0.06; stroke-opacity: 0.35; stroke-width: 1; }
+.dep { stroke: var(--muted); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; fill: none; }
+
+.bld { cursor: pointer; }
+.bld polygon, .bld path, .bld ellipse, .bld rect { stroke-width: 0.8; }
+.bld .win { opacity: 0.4; stroke-width: 1; fill: none; }
+.bld.sel, .bld.lit { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--sel) 55%, transparent)); }
+.bld.sel .topf { stroke-width: 2.2; }
+.bld:focus { outline: none; }
+.bld:focus-visible { filter: drop-shadow(0 0 6px var(--sel)); }
+.ghost polygon { fill: var(--bg); fill-opacity: 0.5; stroke: var(--muted); stroke-dasharray: 4 3; }
+
+/* district face classes */
+.cl .topf{fill:var(--clt);stroke:var(--cll)} .cl .wf{fill:var(--clw);stroke:var(--cll)} .cl .ef{fill:var(--cle);stroke:var(--cll)} .cl .win{stroke:var(--cll)}
+.co .topf{fill:var(--cot);stroke:var(--col)} .co .wf{fill:var(--cow);stroke:var(--col)} .co .ef{fill:var(--coe);stroke:var(--col)} .co .win{stroke:var(--col)}
+.ct .topf{fill:var(--ctt);stroke:var(--ctl)} .ct .wf{fill:var(--ctw);stroke:var(--ctl)} .ct .ef{fill:var(--cte);stroke:var(--ctl)} .ct .win{stroke:var(--ctl)}
+.cd .topf{fill:var(--cdt);stroke:var(--cdl)} .cd .wf{fill:var(--cdw);stroke:var(--cdl)} .cd .ef{fill:var(--cde);stroke:var(--cdl)} .cd .win{stroke:var(--cdl)}
+.ws .topf{fill:var(--wst);stroke:var(--wsl)} .ws .wf{fill:var(--wsw);stroke:var(--wsl)} .ws .ef{fill:var(--wse);stroke:var(--wsl)} .ws .win{stroke:var(--wsl)}
+.st .topf{fill:var(--stt);stroke:var(--stl)} .st .wf{fill:var(--stw);stroke:var(--stl)} .st .ef{fill:var(--ste);stroke:var(--stl)} .st .win{stroke:var(--stl)}
+.pl-cl{fill:var(--cll);stroke:var(--cll)} .pl-co{fill:var(--col);stroke:var(--col)}
+.pl-ct{fill:var(--ctl);stroke:var(--ctl)} .pl-cd{fill:var(--cdl);stroke:var(--cdl)}
+.pl-ws{fill:var(--wsl);stroke:var(--wsl)} .pl-ex{fill:var(--muted);stroke:var(--muted)}
+
+/* flows */
+.flow { opacity: 0; pointer-events: none; transition: opacity .2s; }
+.flow.on { opacity: 1; }
+.flow line { stroke-width: 2.2; fill: none; }
+.flow .dot { stroke: var(--bg); stroke-width: 1.2; }
+.f-prompt line { stroke: var(--fprompt); } .f-prompt .dot, .f-prompt .hoplab { fill: var(--fprompt); }
+.f-tools  line { stroke: var(--ftools); }  .f-tools .dot,  .f-tools .hoplab  { fill: var(--ftools); }
+.f-events line { stroke: var(--fevents); stroke-dasharray: 6 4; } .f-events .dot, .f-events .hoplab { fill: var(--fevents); }
+.f-share  line { stroke: var(--fshare); stroke-dasharray: 2 4; stroke-linecap: round; } .f-share .dot, .f-share .hoplab { fill: var(--fshare); }
+
+/* legend */
+.legend { border: 1px solid var(--line); border-radius: 10px; background: var(--card);
+  margin-top: 14px; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 18px 30px; }
+.legend h3 { flex-basis: 100%; margin: 0 0 2px; font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.legend .col { display: flex; flex-direction: column; gap: 7px; min-width: 150px; }
+.legend .it { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink); }
+.legend .it svg { flex: none; }
+.legend .it .ln { width: 26px; height: 0; border-top: 3px solid; border-radius: 2px; flex: none; }
+.legend .note { font-size: 12px; color: var(--muted); max-width: 30ch; }
+
+/* explainer panel */
+aside.panel { position: sticky; top: 16px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--card); padding: 18px 20px 20px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.panel .eyebrow { font-size: 10.5px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; margin: 0 0 6px; }
+.panel h2 { margin: 0 0 4px; font-size: 19px;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; letter-spacing: -0.3px; }
+.panel .pkg { display: inline-block; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11.5px; background: var(--chip); border-radius: 5px; padding: 2px 7px; margin-bottom: 10px; }
+.panel p { margin: 0 0 10px; font-size: 13.5px; color: var(--ink); }
+.panel p.dim { color: var(--muted); }
+.panel .sect { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; margin: 14px 0 6px; }
+.panel ul.files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.panel ul.files a { display: block; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px; color: var(--ink); background: var(--chip); border-radius: 5px; padding: 4px 8px;
+  text-decoration: none; word-break: break-all; }
+.panel ul.files a:hover { outline: 1px solid var(--muted); }
+.panel ul.files .note { display: block; font-family: system-ui, sans-serif; font-size: 11.5px; color: var(--muted); }
+.panel ol.hops { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+.panel ol.hops .hop-t { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
+.panel ol.hops .hop-route { color: var(--muted); font-size: 12px; }
+.panel .flowchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.panel .flowchips button { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px;
+  border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px;
+  padding: 3px 9px; cursor: pointer; }
+.panel .back { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px;
+  border: none; background: none; color: var(--muted); cursor: pointer; padding: 0; margin-bottom: 10px; }
+.panel .back:hover { color: var(--ink); text-decoration: underline; }
+footer.src { margin-top: 26px; font-size: 12px; color: var(--muted); }
+footer.src code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+</style>
+
+<div class="wrap">
+  <header class="site">
+    <h1>opencode<span class="tld"> atlas</span></h1>
+    <p class="thesis">An AI coding agent that runs where your code lives: every client speaks one generated SDK
+      to a local HTTP server. The cloud exists only for sharing, accounts, docs, and telemetry.</p>
+    <span class="ref mono">sandipwane/opencode @ c387fe190 (dev)</span>
+  </header>
+
+  <div class="toolbar" role="group" aria-label="Trace a payload">
+    <span class="lbl">Trace a payload</span>
+    <button class="chip" data-flow="prompt"><span class="sw"></span>Prompt turn</button>
+    <button class="chip" data-flow="tools"><span class="sw"></span>Tool loop</button>
+    <button class="chip" data-flow="events"><span class="sw"></span>Event fan-out</button>
+    <button class="chip" data-flow="share"><span class="sw"></span>Share sync</button>
+  </div>
+
+  <div class="layout">
+    <div class="mapcol">
+      <div class="mapbox"><div id="map"></div></div>
+
+      <div class="legend" id="legend">
+        <h3>Legend</h3>
+        <div class="col" id="leg-shapes"></div>
+        <div class="col" id="leg-districts"></div>
+        <div class="col">
+          <div class="it"><span class="ln" style="border-color:var(--fprompt)"></span>Prompt turn — control path</div>
+          <div class="it"><span class="ln" style="border-color:var(--ftools)"></span>Tool loop — side effects</div>
+          <div class="it"><span class="ln" style="border-color:var(--fevents);border-top-style:dashed"></span>Event fan-out — data back</div>
+          <div class="it"><span class="ln" style="border-color:var(--fshare);border-top-style:dotted"></span>Share sync — to the cloud</div>
+          <div class="it"><span class="ln" style="border-color:var(--muted);border-top-style:dashed;opacity:.5"></span>Static dependency</div>
+        </div>
+        <div class="note">Striped roofs mark the v2 Effect-native rewrite growing inside the v1 runtime.
+          The floating plate is SST-managed infrastructure; dashed outlines are external SaaS.</div>
+      </div>
+    </div>
+
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <footer class="src">
+    Derived from source at commit <code>c387fe190</code> on <code>origin/dev</code> — topology from
+    <code>sst.config.ts</code>, <code>infra/*.ts</code>, <code>AGENTS.md</code>, <code>CONTEXT.md</code>,
+    and the package entry points cited per building. Click any building or trace chip; click empty ground to reset.
+  </footer>
+</div>
+
+<script>
+"use strict";
+const IW = 26, IH = 13;
+const GH = "https://github.com/sandipwane/opencode/blob/c387fe190/";
+let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+const px = (gx, gy, z) => {
+  const x = (gx - gy) * IW, y = (gx + gy) * IH - (z || 0);
+  if (x < minX) minX = x; if (x > maxX) maxX = x;
+  if (y < minY) minY = y; if (y > maxY) maxY = y;
+  return [x, y];
+};
+const pts = a => a.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+
+/* ---------- data ---------- */
+
+const DISTRICTS = [
+  { id: "clients", label: "Clients", cls: "pl-cl", gx: 0, gy: 9, w: 9.6, d: 10.2, z: 0 },
+  { id: "contract", label: "Contract · v2", cls: "pl-ct", gx: 3.6, gy: 1.6, w: 8.2, d: 3.8, z: 0, lc: "D" },
+  { id: "sdkpad", label: "", cls: "pl-ct", gx: 8.3, gy: 7, w: 3, d: 3, z: 0 },
+  { id: "core", label: "Local core — one process", cls: "pl-co", gx: 10.6, gy: 2.6, w: 13.4, d: 12.4, z: 0 },
+  { id: "workspace", label: "Working dir", cls: "pl-ws", gx: 14.6, gy: 16.2, w: 6.4, d: 4, z: 0 },
+  { id: "ext", label: "External model APIs", cls: "pl-ex", gx: 26, gy: 4, w: 5.6, d: 8, z: 0 },
+  { id: "cloud", label: "opencode.ai edge — SST", cls: "pl-cd", gx: 17, gy: -7.4, w: 15, d: 7.8, z: 30 },
+];
+
+/* kind: tower | slab | cyl | mast | ghost   dist: cl co ct cd ws st ex */
+const B = [
+  { id:"tui", n:"TUI", gx:5, gy:10, w:2.4, d:2.4, h:48, kind:"tower", dist:"cl",
+    pkg:"packages/tui", district:"Clients",
+    role:"The default interface: a SolidJS app rendered to the terminal via OpenTUI. Running bare `opencode` puts the TUI on the main thread and the whole server in a worker thread beside it — fetch and events cross an in-process RPC bridge, no TCP.",
+    files:[["packages/tui/src/app.tsx","root component, provider tree, keymap"],
+           ["packages/tui/src/context/sdk.tsx","SDK client + batched event pump"],
+           ["packages/opencode/src/cli/cmd/tui.ts","createWorkerFetch / createEventSource"],
+           ["packages/opencode/src/cli/tui/worker.ts","the server-in-a-worker"]] },
+  { id:"app", n:"App", gx:0.8, gy:13.6, w:2.4, d:2.4, h:42, kind:"tower", dist:"cl",
+    pkg:"packages/app", district:"Clients",
+    role:"The SolidJS single-page GUI. The same bundle is the Electron renderer and the hosted app.opencode.ai — it keeps a registry of server URLs with health polling and opens a directory-scoped SDK per connection.",
+    files:[["packages/app/src/app.tsx","router + provider stack"],
+           ["packages/app/src/context/server.tsx","server connection registry"],
+           ["packages/app/src/context/server-sdk.tsx","per-directory SDK"],
+           ["packages/app/src/context/server-sync.tsx","event-driven state sync"]] },
+  { id:"desktop", n:"Desktop", gx:0.8, gy:9.8, w:2.4, d:2.4, h:34, kind:"tower", dist:"cl",
+    pkg:"packages/desktop", district:"Clients",
+    role:"Electron shell. The main process boots the opencode server in-process as a worker sidecar — Server.listen({ cors: [\"oc://renderer\"] }) — and points the renderer (the App SPA) at 127.0.0.1 with basic auth.",
+    files:[["packages/desktop/src/main/index.ts","app bootstrap"],
+           ["packages/desktop/src/main/server.ts","spawnLocalServer"],
+           ["packages/desktop/src/main/sidecar.ts","worker running Server.listen"]] },
+  { id:"slack", n:"Slack", gx:5, gy:14, w:2, d:2, h:22, kind:"tower", dist:"cl",
+    pkg:"packages/slack", district:"Clients",
+    role:"Standalone Slack bot: boots an embedded opencode server through the SDK's launcher and bridges Slack threads to sessions.",
+    files:[["packages/slack/src/index.ts","bot entry"],
+           ["packages/sdk/js/src/v2/server.ts","createOpencodeServer — spawns `opencode serve`"]] },
+  { id:"ide", n:"IDE · ACP", gx:0.9, gy:16.9, w:1.8, d:1.8, h:18, kind:"tower", dist:"cl",
+    pkg:"packages/opencode/src/{ide,acp}", district:"Clients",
+    role:"Two editor paths: a VS Code-family extension auto-installed when a supported terminal is detected, and the Agent Client Protocol for Zed-style editors speaking over stdio.",
+    files:[["packages/opencode/src/ide/index.ts","VS Code / Cursor / Windsurf detection + install"],
+           ["packages/opencode/src/acp/agent.ts","ACP agent implementation"],
+           ["packages/opencode/src/cli/cmd/acp.ts","`opencode acp` entry"]] },
+  { id:"sdk", n:"SDK", gx:8.7, gy:7.4, w:2.2, d:2.2, h:18, kind:"tower", dist:"ct",
+    pkg:"@opencode-ai/sdk", district:"Contract",
+    role:"The single typed boundary. Every client — TUI, App, desktop renderer, Slack, even plugins — calls createOpencodeClient, which stamps x-opencode-directory / x-opencode-workspace headers so one server process can host many project instances.",
+    files:[["packages/sdk/js/src/v2/client.ts","createOpencodeClient + header rewrite"],
+           ["packages/sdk/js/src/v2/server.ts","server launcher"],
+           ["packages/sdk/openapi.json","generated spec"]] },
+  { id:"schema", n:"schema", gx:4.2, gy:2.2, w:1.8, d:1.8, h:18, kind:"tower", dist:"ct", v2:true,
+    pkg:"@opencode-ai/schema", district:"Contract · v2",
+    role:"Pure Effect Schema domain types — events, permissions, models, prompts — the dependency leaf everything else shares.",
+    files:[["packages/schema/src/index.ts","shared domain types"],
+           ["packages/schema/src/event-manifest.ts","event catalog"]] },
+  { id:"protocol", n:"protocol", gx:6.6, gy:2, w:1.8, d:1.8, h:24, kind:"tower", dist:"ct", v2:true,
+    pkg:"@opencode-ai/protocol", district:"Contract · v2",
+    role:"The declarative HTTP contract: endpoint groups, payloads, errors, middleware placement — no implementation. The server hosts it; codegen compiles it into clients.",
+    files:[["packages/protocol/src/api.ts","API definition"],
+           ["packages/protocol/src/groups/session.ts","session endpoint group"]] },
+  { id:"clientgen", n:"client-gen", gx:9.2, gy:2.2, w:1.8, d:1.8, h:20, kind:"tower", dist:"ct", v2:true,
+    pkg:"@opencode-ai/client", district:"Contract · v2",
+    role:"Generated Promise and Effect clients compiled from the protocol contract by httpapi-codegen. Regenerated with `bun run generate`; never edited by hand (AGENTS.md).",
+    files:[["packages/client/src/generated","generated client output"],
+           ["packages/httpapi-codegen","the code generator"]] },
+  { id:"server", n:"Server", gx:14, gy:3.2, w:3, d:3, h:64, kind:"tower", dist:"co",
+    pkg:"packages/opencode/src/server", district:"Local core",
+    role:"One HTTP app serves every client: the v1 API surface composed with the mounted v2 route layer. Middleware resolves auth and the target project instance per request, and the server advertises itself over mDNS for LAN discovery.",
+    files:[["packages/opencode/src/server/server.ts","Server.listen / lifecycle"],
+           ["packages/opencode/src/server/routes/instance/httpapi/api.ts","full API composition"],
+           ["packages/opencode/src/server/routes/instance/httpapi/middleware/instance-context.ts","directory → instance routing"],
+           ["packages/server/src/routes.ts","v2 route layer (Effect HttpApi)"],
+           ["packages/opencode/src/server/mdns.ts","LAN discovery"]] },
+  { id:"session", n:"Sessions", gx:14.2, gy:7.4, w:3, d:3, h:46, kind:"tower", dist:"co",
+    pkg:"packages/opencode/src/session", district:"Local core",
+    role:"The agent loop: durable prompt admission, history projection and compaction, one LLM.stream per provider turn, and a processor state machine folding stream deltas into message parts and tool calls.",
+    files:[["packages/opencode/src/session/prompt.ts","SessionPrompt.prompt / .loop"],
+           ["packages/opencode/src/session/processor.ts","stream → parts / tool-call settlement"],
+           ["packages/opencode/src/session/system.ts","system context assembly"],
+           ["packages/core/src/session/projector.ts","v2 event → row projection"],
+           ["packages/core/src/system-context","v2 context-source algebra"]] },
+  { id:"provider", n:"Providers", gx:18.6, gy:3.4, w:2.6, d:2.6, h:40, kind:"tower", dist:"co",
+    pkg:"packages/opencode/src/provider + packages/llm", district:"Local core",
+    role:"Model resolution and streaming. Merges the models.dev catalog with configured credentials to pick a model, then streams via the Vercel AI SDK path or the native packages/llm runtime with per-provider wire protocols.",
+    files:[["packages/opencode/src/provider/provider.ts","getProvider / getModel / catalog merge"],
+           ["packages/opencode/src/session/llm.ts","LLM.stream dispatch"],
+           ["packages/opencode/src/session/llm/native-runtime.ts","native streaming path"],
+           ["packages/llm/src/route/executor.ts","request execution"],
+           ["packages/llm/src/providers/anthropic.ts","one of 10 provider adapters"]] },
+  { id:"auth", n:"Auth", gx:22, gy:3.6, w:1.6, d:1.6, h:18, kind:"tower", dist:"co",
+    pkg:"packages/opencode/src/auth", district:"Local core",
+    role:"Provider credentials in ~/.local/share/opencode/auth.json — OAuth, API key, or well-known — plus basic-auth protection for the server itself. The v2 rewrite moves credentials into SQLite.",
+    files:[["packages/opencode/src/auth/index.ts","auth.json read/write"],
+           ["packages/opencode/src/provider/auth.ts","provider OAuth flows"],
+           ["packages/opencode/src/server/auth.ts","server password auth"],
+           ["packages/core/src/credential.ts","v2 credential store"]] },
+  { id:"config", n:"Config", gx:11.2, gy:3.6, w:1.8, d:1.8, h:16, kind:"tower", dist:"co",
+    pkg:"packages/opencode/src/config", district:"Local core",
+    role:"Global XDG config merged with per-project opencode.json(c) walking up from cwd — JSONC parsing, env expansion, hot reload via a watcher.",
+    files:[["packages/opencode/src/config/config.ts","merge order"],
+           ["packages/opencode/src/config/parse.ts","JSONC + env expansion"],
+           ["packages/core/src/config/watcher.ts","hot reload"]] },
+  { id:"bus", n:"Bus", gx:11.2, gy:7.8, w:1.6, d:1.6, h:22, kind:"mast", dist:"co", v2:true,
+    pkg:"packages/core/src/event", district:"Local core",
+    role:"Three layers of eventing: typed durable EventV2 (event-sourced, in SQLite) → a bridge stamping each event with its Location (directory / project / workspace) → the process-wide GlobalBus every subscriber taps.",
+    files:[["packages/core/src/event.ts","EventV2 durable/ephemeral bus"],
+           ["packages/opencode/src/event-v2-bridge.ts","location stamping"],
+           ["packages/opencode/src/bus/global.ts","GlobalBus fan-out"],
+           ["packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts","SSE endpoint"]] },
+  { id:"sqlite", n:"SQLite", cx:19.9, cy:8.9, r:1.3, h:26, kind:"cyl", dist:"st", v2:true,
+    pkg:"packages/core/src/database", district:"Local core",
+    role:"The durable home: ~/.local/share/opencode/opencode.db (Drizzle, WAL). Sessions, messages, parts, events, and credentials live here as event-sourced projections; legacy JSON blobs still sit beside it.",
+    files:[["packages/core/src/database/database.ts","SQLite + migrations"],
+           ["packages/core/src/session/sql.ts","session/message/part tables"],
+           ["packages/core/src/session/store.ts","read paths"],
+           ["packages/opencode/src/storage/storage.ts","legacy JSON storage"]] },
+  { id:"plugins", n:"Plugins", gx:11.2, gy:11.8, w:1.8, d:1.8, h:20, kind:"tower", dist:"co",
+    pkg:"packages/opencode/src/plugin", district:"Local core",
+    role:"npm and file plugins loaded into the host; hooks fire through trigger(...). Each plugin receives its own SDK client pointed back at the hosting server — plugins are clients too.",
+    files:[["packages/opencode/src/plugin/index.ts","Plugin.Service + SDK handoff"],
+           ["packages/opencode/src/plugin/loader.ts","module loading"],
+           ["packages/plugin/src/index.ts","public hook/tool types"]] },
+  { id:"permission", n:"Perms", gx:13.8, gy:11.9, w:1.8, d:1.8, h:18, kind:"tower", dist:"co",
+    pkg:"packages/opencode/src/permission", district:"Local core",
+    role:"Every side-effecting tool call passes the ruleset here first; unresolved asks surface to clients as permission requests and block the call until answered.",
+    files:[["packages/opencode/src/permission/evaluate.ts","ruleset evaluation"],
+           ["packages/opencode/src/permission/index.ts","permission service"],
+           ["packages/opencode/src/permission/arity.ts","pattern matching"]] },
+  { id:"tools", n:"Tools", gx:16.4, gy:11.4, w:2.6, d:2.6, h:30, kind:"tower", dist:"co",
+    pkg:"packages/opencode/src/tool", district:"Local core",
+    role:"The tool registry assembles builtins (shell, edit, read, glob, grep, patch, webfetch, task…) plus plugin and MCP tools, filtered per agent and permission ruleset; results are bounded before they re-enter history.",
+    files:[["packages/opencode/src/tool/registry.ts","registry assembly"],
+           ["packages/opencode/src/tool/tool.ts","Tool.Def contract"],
+           ["packages/opencode/src/tool/shell.ts","bash tool"],
+           ["packages/opencode/src/session/tools.ts","per-turn resolution"]] },
+  { id:"lsp", n:"LSP", gx:19.9, gy:11.7, w:2, d:2, h:24, kind:"tower", dist:"co",
+    pkg:"packages/opencode/src/lsp", district:"Local core",
+    role:"40+ language-server definitions spawn lazily per project root over stdio; diagnostics, hover, and symbols feed both tools and the UI.",
+    files:[["packages/opencode/src/lsp/server.ts","server definitions + spawn"],
+           ["packages/opencode/src/lsp/lsp.ts","lazy lifecycle, diagnostics API"],
+           ["packages/opencode/src/lsp/client.ts","JSON-RPC client"]] },
+  { id:"mcp", n:"MCP", gx:22.3, gy:11.9, w:1.5, d:1.5, h:16, kind:"tower", dist:"co",
+    pkg:"packages/opencode/src/mcp", district:"Local core",
+    role:"Model Context Protocol client: external MCP servers contribute tools into the registry, with their own OAuth flows for remote servers.",
+    files:[["packages/opencode/src/mcp/index.ts","MCP client + tool bridge"],
+           ["packages/opencode/src/mcp/auth.ts","MCP OAuth"]] },
+  { id:"workspace", n:"Your repo", gx:16.4, gy:17, w:2.6, d:2.6, h:18, kind:"slab", dist:"ws",
+    pkg:"your working directory", district:"Working dir",
+    role:"The directory the agent edits. Shell, edit, and patch tools act here — behind git-backed snapshots, so any turn can be reverted. Worktrees isolate parallel work.",
+    files:[["packages/opencode/src/tool/shell.ts","commands run here"],
+           ["packages/opencode/src/snapshot","git-backed checkpoints"],
+           ["packages/opencode/src/session/revert.ts","undo a turn"],
+           ["packages/opencode/src/worktree","worktree management"]] },
+  { id:"ext", n:"Model APIs", gx:26.8, gy:4.8, w:2.6, d:3.2, h:38, kind:"ghost", dist:"ex",
+    pkg:"external SaaS", district:"External",
+    role:"Anthropic, OpenAI, Google, Bedrock, Azure, GitHub Copilot, OpenRouter, xAI, Cloudflare — spoken to natively through per-provider adapters and wire protocols, or through the Vercel AI SDK fallback.",
+    files:[["packages/llm/src/providers","10 provider adapters"],
+           ["packages/llm/src/protocols/anthropic-messages.ts","Anthropic wire protocol"],
+           ["packages/llm/src/protocols/openai-chat.ts","OpenAI wire protocol"]] },
+  { id:"modelsdev", n:"models.dev", gx:26.9, gy:9.6, w:2, d:1.8, h:14, kind:"ghost", dist:"ex",
+    pkg:"external catalog", district:"External",
+    role:"The public model catalog, merged with local credentials during provider resolution.",
+    files:[["packages/core/src/models-dev.ts","catalog fetch + cache"]] },
+  { id:"docs", n:"Docs", gx:17.8, gy:-6.2, w:2.4, d:2, h:12, kind:"slab", dist:"cd", z0:30,
+    pkg:"packages/web", district:"Cloud edge",
+    role:"Astro/Starlight documentation site at docs.opencode.ai, deployed as a Cloudflare Astro site.",
+    files:[["packages/web/astro.config.mjs","Astro + Cloudflare adapter"],
+           ["infra/app.ts","`Web` — docs.<domain>"]] },
+  { id:"webapp", n:"app host", gx:20.9, gy:-6.4, w:2.4, d:2, h:12, kind:"slab", dist:"cd", z0:30,
+    pkg:"infra/app.ts", district:"Cloud edge",
+    role:"Static hosting for the App SPA at app.opencode.ai — the very same bundle the Electron renderer runs locally.",
+    files:[["infra/app.ts","`WebApp` static site"],
+           ["packages/app/src/entry.tsx","the deployed bundle's entry"]] },
+  { id:"stats", n:"Stats", gx:23.9, gy:-6.2, w:2, d:1.8, h:14, kind:"slab", dist:"cd", z0:30,
+    pkg:"packages/stats", district:"Cloud edge",
+    role:"Public usage-stats site, reading the data lake through an Athena workgroup.",
+    files:[["infra/stats.ts","Athena workgroup + site"],
+           ["packages/stats","app / core / server"]] },
+  { id:"lake", n:"Lake", gx:26.6, gy:-6.6, w:2.8, d:2.2, h:22, kind:"tower", dist:"cd", z0:30,
+    pkg:"infra/lake.ts", district:"Cloud edge",
+    role:"The telemetry lake: Kinesis Firehose delivery into S3 Tables (Iceberg) with a Glue federated catalog, plus an ECS ingest service behind a shared secret.",
+    files:[["infra/lake.ts","Firehose → S3 Tables → Athena"]] },
+  { id:"console", n:"Console", gx:17.8, gy:-2.6, w:2.4, d:2.4, h:34, kind:"tower", dist:"cd", z0:30,
+    pkg:"packages/console", district:"Cloud edge",
+    role:"Accounts, orgs, and billing: an OpenAuth worker with KV storage at auth.opencode.ai, Stripe products and coupons declared in infra, PlanetScale behind Drizzle.",
+    files:[["packages/console/function/src/auth.ts","OpenAuth on Cloudflare"],
+           ["packages/console/core","domain + migrations"],
+           ["infra/console.ts","DB, secrets, Stripe products"]] },
+  { id:"planetscale", n:"PlanetScale", cx:21.9, cy:-1.3, r:1.1, h:20, kind:"cyl", dist:"st", z0:30,
+    pkg:"managed MySQL", district:"Cloud edge",
+    role:"The SaaS database — accounts, workspaces, billing state — provisioned per stage as a PlanetScale branch.",
+    files:[["infra/console.ts","branch + password + Linkable"],
+           ["packages/console/core","Drizzle schema"]] },
+  { id:"api", n:"api worker", gx:23.8, gy:-2.8, w:2.6, d:2.6, h:42, kind:"tower", dist:"cd", z0:30,
+    pkg:"packages/function", district:"Cloud edge",
+    role:"The Cloudflare Worker at api.opencode.ai: the share backend (a SyncServer Durable Object fanning out to WebSocket viewers and persisting to R2), GitHub App token exchange, and support bots.",
+    files:[["packages/function/src/api.ts","Hono app + SyncServer DO"],
+           ["infra/app.ts","`Api` worker + bindings"]] },
+  { id:"r2", n:"R2", cx:28, cy:-1.4, r:1.1, h:20, kind:"cyl", dist:"st", z0:30,
+    pkg:"Cloudflare R2", district:"Cloud edge",
+    role:"Object storage for share payloads: share/<key>.json for session info, messages, and parts — written by the Durable Object, read by the Teams site.",
+    files:[["packages/function/src/api.ts","Bucket.put(`share/${key}.json`)"],
+           ["infra/app.ts","R2 bucket binding"]] },
+  { id:"enterprise", n:"Teams", gx:29.6, gy:-3, w:2, d:2, h:28, kind:"tower", dist:"cd", z0:30,
+    pkg:"packages/enterprise", district:"Cloud edge",
+    role:"SolidStart app at opncd.ai rendering shared and team session views straight from R2.",
+    files:[["packages/enterprise/src/routes/share.tsx","share page"],
+           ["packages/enterprise/src/core/share.ts","share data access"],
+           ["packages/enterprise/src/core/storage.ts","R2 reads"],
+           ["infra/enterprise.ts","`Teams` site + storage"]] },
+];
+
+const DEPS = [
+  ["desktop","app"],["app","sdk"],["tui","sdk"],["slack","sdk"],["ide","server"],["sdk","server"],
+  ["server","protocol"],["protocol","schema"],["protocol","clientgen"],["clientgen","sdk"],
+  ["provider","auth"],["provider","modelsdev"],["console","planetscale"],["api","r2"],
+  ["enterprise","r2"],["lake","stats"],["webapp","app"]
+];
+
+const FLOWS = {
+  prompt: { label:"Prompt turn", cls:"f-prompt",
+    intro:"One turn of the agent loop, keypress to model. The reply folds back along the same path: the processor turns stream deltas into message parts, which is where tool calls are born.",
+    outro:"Return path: packages/opencode/src/session/processor.ts folds the stream into message parts.",
+    hops:[
+      { a:"tui", b:"sdk", t:"createOpencodeClient()", files:[["packages/tui/src/context/sdk.tsx"],["packages/sdk/js/src/v2/client.ts"]] },
+      { a:"sdk", b:"server", t:"POST /session/:id/message", files:[["packages/opencode/src/server/routes/instance/httpapi/groups/session.ts"],["packages/opencode/src/server/routes/instance/httpapi/middleware/instance-context.ts"]] },
+      { a:"server", b:"session", t:"SessionPrompt.prompt → loop", files:[["packages/opencode/src/server/routes/instance/httpapi/handlers/session.ts"],["packages/opencode/src/session/prompt.ts"]] },
+      { a:"session", b:"provider", t:"LLM.stream(request)", files:[["packages/opencode/src/session/llm.ts"],["packages/opencode/src/provider/provider.ts"]] },
+      { a:"provider", b:"ext", t:"provider wire protocol", files:[["packages/llm/src/route/executor.ts"],["packages/llm/src/protocols/anthropic-messages.ts"]] },
+    ]},
+  tools: { label:"Tool loop", cls:"f-tools",
+    intro:"When the model calls a tool: gate it, run it in the working tree, settle the bounded result, persist. Git snapshots taken around edits make every turn revertible.",
+    outro:"Snapshots: packages/opencode/src/snapshot — revert: packages/opencode/src/session/revert.ts.",
+    hops:[
+      { a:"session", b:"permission", t:"ruleset check", files:[["packages/opencode/src/permission/evaluate.ts"],["packages/opencode/src/permission/index.ts"]] },
+      { a:"permission", b:"tools", t:"Tool.execute()", files:[["packages/opencode/src/tool/registry.ts"],["packages/opencode/src/session/tools.ts"]] },
+      { a:"tools", b:"workspace", t:"bash · edit · patch", files:[["packages/opencode/src/tool/shell.ts"],["packages/opencode/src/tool/edit.ts"]] },
+      { a:"workspace", b:"sqlite", t:"settle → project parts", files:[["packages/opencode/src/session/processor.ts"],["packages/core/src/session/projector.ts"]] },
+    ]},
+  events: { label:"Event fan-out", cls:"f-events",
+    intro:"Every durable write publishes an event; clients render from the event stream, not from request responses. The embedded TUI receives the same events over worker RPC instead of SSE.",
+    outro:"Embedded path: packages/opencode/src/cli/tui/worker.ts emits global.event over RPC.",
+    hops:[
+      { a:"session", b:"bus", t:"EventV2.publish", files:[["packages/core/src/event.ts"],["packages/opencode/src/event-v2-bridge.ts"]] },
+      { a:"bus", b:"server", t:"GlobalBus fan-out", files:[["packages/opencode/src/bus/global.ts"]] },
+      { a:"server", b:"sdk", t:"GET /event — SSE", files:[["packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts"]] },
+      { a:"sdk", b:"app", t:"reactive store patch", files:[["packages/app/src/context/server-sync.tsx"],["packages/tui/src/context/sdk.tsx"]] },
+    ]},
+  share: { label:"Share sync", cls:"f-share",
+    intro:"Opting into share streams session, message, and part deltas to api.opencode.ai. A Durable Object persists them to R2 and fans out to WebSocket viewers; opncd.ai renders the shared session.",
+    outro:"Share policy (auto / disabled) lives in packages/opencode/src/share/session.ts.",
+    hops:[
+      { a:"session", b:"api", t:"share_sync deltas", files:[["packages/opencode/src/share/share-next.ts"],["packages/opencode/src/share/session.ts"]] },
+      { a:"api", b:"r2", t:"SyncServer DO → share/<key>.json", files:[["packages/function/src/api.ts"],["infra/app.ts"]] },
+      { a:"r2", b:"enterprise", t:"read + render", files:[["packages/enterprise/src/core/share.ts"],["packages/enterprise/src/routes/share.tsx"]] },
+    ]},
+};
+
+/* ---------- geometry ---------- */
+
+function boxFaces(gx, gy, w, d, h, z0) {
+  const A = px(gx, gy, z0 + h), Bp = px(gx + w, gy, z0 + h),
+        C = px(gx + w, gy + d, z0 + h), D = px(gx, gy + d, z0 + h);
+  const B0 = px(gx + w, gy, z0), C0 = px(gx + w, gy + d, z0), D0 = px(gx, gy + d, z0);
+  return { top:[A, Bp, C, D], east:[Bp, B0, C0, C], west:[D, D0, C0, C] };
+}
+
+function drawBox(b) {
+  const z0 = b.z0 || 0, f = boxFaces(b.gx, b.gy, b.w, b.d, b.h, z0);
+  let s = `<polygon class="wf" points="${pts(f.west)}"/><polygon class="ef" points="${pts(f.east)}"/>`;
+  if (b.h >= 28 && b.kind !== "ghost") {
+    for (let z = z0 + b.h - 10; z > z0 + 8; z -= 9) {
+      const e1 = px(b.gx + b.w, b.gy + 0.3, z), e2 = px(b.gx + b.w, b.gy + b.d - 0.3, z);
+      const w1 = px(b.gx + 0.3, b.gy + b.d, z), w2 = px(b.gx + b.w - 0.3, b.gy + b.d, z);
+      s += `<line class="win" x1="${e1[0]}" y1="${e1[1]}" x2="${e2[0]}" y2="${e2[1]}"/>`
+         + `<line class="win" x1="${w1[0]}" y1="${w1[1]}" x2="${w2[0]}" y2="${w2[1]}"/>`;
+    }
+  }
+  s += `<polygon class="topf" points="${pts(f.top)}"/>`;
+  if (b.v2) s += `<polygon points="${pts(f.top)}" fill="url(#v2hatch)" stroke="none"/>`;
+  if (b.kind === "mast") {
+    const t = px(b.gx + b.w / 2, b.gy + b.d / 2, z0 + b.h);
+    const tip = [t[0], t[1] - 26];
+    s += `<line x1="${t[0]}" y1="${t[1]}" x2="${tip[0]}" y2="${tip[1]}" stroke="var(--col)" stroke-width="1.6"/>`
+       + `<circle cx="${tip[0]}" cy="${tip[1]}" r="2.6" fill="var(--col)"/>`
+       + `<path d="M ${tip[0]-9} ${tip[1]-3} a 9 9 0 0 1 18 0" fill="none" stroke="var(--col)" stroke-width="1.2" opacity="0.65"/>`
+       + `<path d="M ${tip[0]-14} ${tip[1]-1} a 14 14 0 0 1 28 0" fill="none" stroke="var(--col)" stroke-width="1.2" opacity="0.4"/>`;
+    px(b.gx + b.w / 2, b.gy + b.d / 2, z0 + b.h + 34); /* extend bounds */
+  }
+  return s;
+}
+
+function drawCyl(b) {
+  const z0 = b.z0 || 0, rx = b.r * Math.SQRT2 * IW, ry = b.r * Math.SQRT2 * IH;
+  const c = px(b.cx, b.cy, z0), yb = c[1], yt = yb - b.h, x = c[0];
+  px(b.cx, b.cy, z0 + b.h + ry); px(b.cx + b.r * 1.5, b.cy + b.r * 1.5, 0);
+  let s = `<path class="ef" d="M ${x-rx} ${yt} L ${x-rx} ${yb} A ${rx} ${ry} 0 0 0 ${x+rx} ${yb} L ${x+rx} ${yt} Z"/>`
+        + `<ellipse class="topf" cx="${x}" cy="${yt}" rx="${rx}" ry="${ry}"/>`
+        + `<ellipse cx="${x}" cy="${yt}" rx="${rx*0.62}" ry="${ry*0.62}" fill="none" stroke="var(--stl)" stroke-width="0.8" opacity="0.5"/>`;
+  if (b.v2) s += `<ellipse cx="${x}" cy="${yt}" rx="${rx}" ry="${ry}" fill="url(#v2hatch)" stroke="none"/>`;
+  return s;
+}
+
+function anchor(b) {
+  const z0 = b.z0 || 0;
+  if (b.kind === "cyl") return px(b.cx, b.cy, z0 + b.h * 0.55);
+  return px(b.gx + b.w / 2, b.gy + b.d / 2, z0 + Math.min(b.h * 0.55, 26));
+}
+
+function labelPos(b) {
+  const z0 = b.z0 || 0;
+  if (b.kind === "cyl") { const p = px(b.cx, b.cy, z0 + b.h); return [p[0], p[1] - b.r * Math.SQRT2 * IH - 6]; }
+  const p = px(b.gx + b.w / 2, b.gy + b.d / 2, z0 + b.h + (b.kind === "mast" ? 34 : 0));
+  return [p[0], p[1] - 7];
+}
+
+/* ---------- build svg ---------- */
+
+const byId = {}; B.forEach(b => byId[b.id] = b);
+const plateLayer = [], depLayer = [], bldLayer = [], flowLayer = [], labelLayer = [];
+
+for (const d of DISTRICTS) {
+  const c = [px(d.gx, d.gy, d.z), px(d.gx + d.w, d.gy, d.z), px(d.gx + d.w, d.gy + d.d, d.z), px(d.gx, d.gy + d.d, d.z)];
+  if (d.z > 0) {
+    const g = [px(d.gx, d.gy, 0), px(d.gx + d.w, d.gy, 0), px(d.gx + d.w, d.gy + d.d, 0), px(d.gx, d.gy + d.d, 0)];
+    plateLayer.push(`<polygon class="shadow" points="${pts(g)}"/>`);
+    const b0 = px(d.gx + d.w, d.gy, d.z - 8), c0 = px(d.gx + d.w, d.gy + d.d, d.z - 8), d0 = px(d.gx, d.gy + d.d, d.z - 8);
+    plateLayer.push(`<polygon class="${d.cls}" fill-opacity="0.22" stroke="none" points="${pts([c[1], b0, c0, c[2]])}"/>`);
+    plateLayer.push(`<polygon class="${d.cls}" fill-opacity="0.3" stroke="none" points="${pts([c[3], d0, c0, c[2]])}"/>`);
+  }
+  plateLayer.push(`<polygon class="plate ${d.cls}" points="${pts(c)}"/>`);
+  if (d.label) {
+    const lp = d.lc === "D" ? px(d.gx, d.gy + d.d, d.z) : px(d.gx + d.w, d.gy + d.d, d.z);
+    const anch = d.lc === "D" ? "end" : "middle";
+    labelLayer.push(`<text class="dlab" x="${lp[0] - (d.lc === "D" ? 8 : 0)}" y="${lp[1] + (d.lc === "D" ? 4 : 17)}" text-anchor="${anch}">${esc(d.label)}</text>`);
+  }
+}
+
+for (const [a, b] of DEPS) {
+  const p1 = anchor(byId[a]), p2 = anchor(byId[b]);
+  depLayer.push(`<line class="dep" x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}"/>`);
+}
+
+B.slice().sort((a, b) => {
+  const ka = a.kind === "cyl" ? a.cx + a.cy + a.r * 2 : a.gx + a.gy + a.w + a.d;
+  const kb = b.kind === "cyl" ? b.cx + b.cy + b.r * 2 : b.gx + b.gy + b.w + b.d;
+  return ka - kb;
+}).forEach(b => {
+  const body = b.kind === "cyl" ? drawCyl(b) : drawBox(b);
+  const cls = "bld " + b.dist + (b.kind === "ghost" ? " ghost" : "");
+  bldLayer.push(`<g class="${cls}" data-id="${b.id}" tabindex="0" role="button" aria-label="${esc(b.n)} — ${esc(b.pkg)}">${body}</g>`);
+  const lp = labelPos(b);
+  labelLayer.push(`<text class="blab" x="${lp[0]}" y="${lp[1]}" text-anchor="middle">${esc(b.n)}</text>`);
+});
+
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+for (const [fid, f] of Object.entries(FLOWS)) {
+  let seg = "", pathd = "";
+  f.hops.forEach((h, i) => {
+    const p1 = anchor(byId[h.a]), p2 = anchor(byId[h.b]);
+    const dx = p2[0] - p1[0], dy = p2[1] - p1[1], L = Math.hypot(dx, dy) || 1;
+    const u = [dx / L, dy / L];
+    const s = [p1[0] + u[0] * 8, p1[1] + u[1] * 8], e = [p2[0] - u[0] * 16, p2[1] - u[1] * 16];
+    seg += `<line x1="${s[0].toFixed(1)}" y1="${s[1].toFixed(1)}" x2="${e[0].toFixed(1)}" y2="${e[1].toFixed(1)}" marker-end="url(#arr-${fid})"/>`;
+    const m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2 - 9];
+    seg += `<text class="hoplab" x="${m[0].toFixed(1)}" y="${m[1].toFixed(1)}" text-anchor="middle">${esc(h.t)}</text>`;
+    pathd += (i === 0 ? `M ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} ` : "") + `L ${p2[0].toFixed(1)} ${p2[1].toFixed(1)} `;
+  });
+  let dots = "";
+  if (!reduced) {
+    const dur = (f.hops.length * 1.8).toFixed(1) + "s";
+    for (let k = 0; k < 3; k++)
+      dots += `<circle class="dot" r="3.6"><animateMotion dur="${dur}" begin="${(-k * f.hops.length * 0.6).toFixed(1)}s" repeatCount="indefinite" path="${pathd.trim()}"/></circle>`;
+  }
+  flowLayer.push(`<g class="flow ${f.cls}" data-flowid="${fid}">${seg}${dots}</g>`);
+}
+
+const PAD = 30, PADT = 46;
+const vb = `${(minX - PAD).toFixed(0)} ${(minY - PADT).toFixed(0)} ${(maxX - minX + PAD * 2).toFixed(0)} ${(maxY - minY + PAD + PADT + 14).toFixed(0)}`;
+const flowColors = { prompt:"var(--fprompt)", tools:"var(--ftools)", events:"var(--fevents)", share:"var(--fshare)" };
+const markers = Object.keys(FLOWS).map(fid =>
+  `<marker id="arr-${fid}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${flowColors[fid]}"/></marker>`).join("");
+
+document.getElementById("map").innerHTML =
+`<svg viewBox="${vb}" role="group" aria-label="Isometric system map of the opencode monorepo: client district, local core, contract quarter, workspace, external model APIs, and the floating opencode.ai cloud plate">
+  <defs>
+    <pattern id="grid" width="${IW * 2}" height="${IH * 2}" patternUnits="userSpaceOnUse">
+      <path class="lattice" d="M 0 0 L ${IW * 2} ${IH * 2} M 0 ${IH * 2} L ${IW * 2} 0" stroke-width="1" fill="none"/>
+    </pattern>
+    <pattern id="v2hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width="1.6" opacity="0.28"/>
+    </pattern>
+    ${markers}
+  </defs>
+  <rect x="${minX - PAD}" y="${minY - PADT}" width="${maxX - minX + PAD * 2}" height="${maxY - minY + PAD + PADT + 14}" fill="url(#grid)" opacity="1" pointer-events="none"/>
+  ${plateLayer.join("")}
+  ${depLayer.join("")}
+  ${bldLayer.join("")}
+  ${labelLayer.join("")}
+  ${flowLayer.join("")}
+</svg>`;
+
+/* ---------- legend swatches ---------- */
+
+const mini = (inner, w, h) => `<svg width="${w||40}" height="${h||30}" viewBox="0 0 40 30" aria-hidden="true">${inner}</svg>`;
+document.getElementById("leg-shapes").innerHTML =
+  `<div class="it">${mini('<polygon points="20,3 32,9 20,15 8,9" fill="var(--cot)" stroke="var(--col)"/><polygon points="8,9 20,15 20,27 8,21" fill="var(--cow)" stroke="var(--col)"/><polygon points="32,9 20,15 20,27 32,21" fill="var(--coe)" stroke="var(--col)"/>')}Tower — long-running service</div>`
++ `<div class="it">${mini('<ellipse cx="20" cy="9" rx="11" ry="5" fill="var(--stt)" stroke="var(--stl)"/><path d="M9 9 L9 21 A11 5 0 0 0 31 21 L31 9" fill="var(--ste)" stroke="var(--stl)"/>')}Cylinder — datastore</div>`
++ `<div class="it">${mini('<line x1="20" y1="27" x2="20" y2="8" stroke="var(--col)" stroke-width="2"/><circle cx="20" cy="7" r="2.5" fill="var(--col)"/><path d="M12 5 a 8 8 0 0 1 16 0" fill="none" stroke="var(--col)" opacity="0.6"/>')}Mast — event bus</div>`
++ `<div class="it">${mini('<polygon points="20,12 34,19 20,26 6,19" fill="var(--cdt)" stroke="var(--cdl)"/><polygon points="6,19 20,26 20,29 6,22" fill="var(--cdw)" stroke="var(--cdl)"/><polygon points="34,19 20,26 20,29 34,22" fill="var(--cde)" stroke="var(--cdl)"/>')}Slab — static site / asset</div>`
++ `<div class="it">${mini('<polygon points="20,4 32,10 20,16 8,10" fill="none" stroke="var(--muted)" stroke-dasharray="3 2"/><polygon points="8,10 20,16 20,27 8,21" fill="none" stroke="var(--muted)" stroke-dasharray="3 2"/><polygon points="32,10 20,16 20,27 32,21" fill="none" stroke="var(--muted)" stroke-dasharray="3 2"/>')}Ghost — external SaaS</div>`;
+document.getElementById("leg-districts").innerHTML =
+  ["cll:Clients", "col:Local core", "ctl:Contract / SDK", "cdl:Cloud edge (SST)", "wsl:Working dir"]
+  .map(s => { const [v, l] = s.split(":");
+    return `<div class="it">${mini(`<polygon points="20,8 36,16 20,24 4,16" fill="var(--${v})" fill-opacity="0.15" stroke="var(--${v})" stroke-opacity="0.6"/>`)}${l}</div>`; }).join("");
+
+/* ---------- panel ---------- */
+
+const panel = document.getElementById("panel");
+const fileList = files => `<ul class="files">` + files.map(f =>
+  `<li><a href="${GH + f[0]}" target="_blank" rel="noopener">${esc(f[0])}${f[1] ? `<span class="note">${esc(f[1])}</span>` : ""}</a></li>`).join("") + `</ul>`;
+
+function flowsTouching(id) {
+  return Object.entries(FLOWS).filter(([, f]) => f.hops.some(h => h.a === id || h.b === id));
+}
+
+function renderOverview() {
+  panel.innerHTML =
+    `<p class="eyebrow">System map</p><h2>opencode</h2>
+     <span class="pkg">32 packages · Bun · TypeScript · Effect</span>
+     <p>One local process is the whole product: <b>every client</b> — terminal, desktop, web app, Slack, IDE —
+     speaks the same generated SDK to the HTTP server inside <span class="pkg" style="margin:0">packages/opencode</span>,
+     which runs sessions, gates and executes tools in your repo, and streams model output.</p>
+     <p>The floating plate is the entire cloud footprint — sharing, accounts and billing, docs, telemetry.
+     None of it is on the prompt path.</p>
+     <p class="dim">Mid-migration: striped roofs are the v2 Effect-native rewrite (schema → protocol → core services,
+     SQLite event store) growing inside the v1 runtime — both are mounted on the same server today.
+     See <b>CONTEXT.md</b> and <b>AGENTS.md</b> at the repo root.</p>
+     <div class="sect">How to read</div>
+     <p class="dim">Click a building for its role and source files. Use the trace chips to follow a payload;
+     each hop is labeled with the function or route that carries it.</p>
+     <div class="sect">Ground truth</div>
+     ${fileList([["sst.config.ts","cloud topology (Cloudflare home, AWS lake)"],["infra/app.ts","Api worker · docs · app hosting"],["CONTEXT.md","session-runtime design language"],["AGENTS.md","package layering rules"]])}`;
+}
+
+function renderBuilding(b) {
+  const fl = flowsTouching(b.id);
+  panel.innerHTML =
+    `<button class="back" data-back>← overview</button>
+     <p class="eyebrow">${esc(b.district)}${b.v2 ? " · v2 rewrite" : ""}</p>
+     <h2>${esc(b.n)}</h2><span class="pkg">${esc(b.pkg)}</span>
+     <p>${esc(b.role)}</p>
+     <div class="sect">Source</div>${fileList(b.files)}
+     ${fl.length ? `<div class="sect">On these paths</div><div class="flowchips">` +
+        fl.map(([id, f]) => `<button data-flowbtn="${id}">${esc(f.label)}</button>`).join("") + `</div>` : ""}`;
+}
+
+function renderFlow(fid) {
+  const f = FLOWS[fid];
+  panel.innerHTML =
+    `<button class="back" data-back>← overview</button>
+     <p class="eyebrow">Payload trace</p><h2>${esc(f.label)}</h2>
+     <p>${esc(f.intro)}</p>
+     <div class="sect">Hops</div>
+     <ol class="hops">` + f.hops.map(h =>
+       `<li><span class="hop-t">${esc(h.t)}</span><br>
+        <span class="hop-route">${esc(byId[h.a].n)} → ${esc(byId[h.b].n)}</span>
+        ${fileList(h.files)}</li>`).join("") +
+    `</ol><p class="dim" style="margin-top:10px">${esc(f.outro)}</p>`;
+}
+
+/* ---------- interaction ---------- */
+
+let activeFlow = null, activeBld = null;
+
+function setFlow(fid) {
+  activeFlow = fid;
+  document.querySelectorAll(".chip[data-flow]").forEach(c => c.classList.toggle("on", c.dataset.flow === fid));
+  document.querySelectorAll(".flow").forEach(g => g.classList.toggle("on", g.dataset.flowid === fid));
+  const lit = new Set();
+  if (fid) FLOWS[fid].hops.forEach(h => { lit.add(h.a); lit.add(h.b); });
+  document.querySelectorAll(".bld").forEach(g => g.classList.toggle("lit", lit.has(g.dataset.id)));
+  if (fid) { setBld(null); renderFlow(fid); } else if (!activeBld) renderOverview();
+}
+
+function setBld(id) {
+  activeBld = id;
+  document.querySelectorAll(".bld").forEach(g => g.classList.toggle("sel", g.dataset.id === id));
+  if (id) renderBuilding(byId[id]);
+}
+
+document.querySelectorAll(".chip[data-flow]").forEach(c =>
+  c.addEventListener("click", () => setFlow(activeFlow === c.dataset.flow ? null : c.dataset.flow)));
+
+document.getElementById("map").addEventListener("click", e => {
+  const g = e.target.closest(".bld");
+  if (g) { setBld(g.dataset.id); return; }
+  setBld(null); if (!activeFlow) renderOverview();
+});
+document.getElementById("map").addEventListener("keydown", e => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const g = e.target.closest(".bld");
+  if (g) { e.preventDefault(); setBld(g.dataset.id); }
+});
+panel.addEventListener("click", e => {
+  if (e.target.closest("[data-back]")) { setBld(null); setFlow(null); renderOverview(); return; }
+  const fb = e.target.closest("[data-flowbtn]");
+  if (fb) setFlow(fb.dataset.flowbtn);
+});
+
+renderOverview();
+</script>
