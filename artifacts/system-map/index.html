@@ -3,7 +3,7 @@
 <style>
 :root {
   --bg: #F1F3F7; --ink: #212B3D; --muted: #5C687E; --card: #FBFCFE;
-  --line: #D7DCE5; --chip: #E9EDF3; --sel: #212B3D;
+  --line: #D7DCE5; --chip: #E9EDF3; --sel: #212B3D; --codebg: #E9EDF3;
   /* districts: top / west face / east face / line */
   --clt:#C5E3DB; --clw:#93C4B7; --cle:#6BA294; --cll:#2E6E60;
   --cot:#CDD1F2; --cow:#9FA6E3; --coe:#7780CE; --col:#3A4299;
@@ -17,7 +17,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg:#12161F; --ink:#DFE5F0; --muted:#93A0B4; --card:#191F2B;
-    --line:#2B3342; --chip:#222A38; --sel:#DFE5F0;
+    --line:#2B3342; --chip:#222A38; --sel:#DFE5F0; --codebg:#10141C;
     --clt:#2E5A50; --clw:#23443D; --cle:#1A332E; --cll:#7FD0BE;
     --cot:#3B4276; --cow:#2D3259; --coe:#222642; --col:#98A0F0;
     --ctt:#46396E; --ctw:#352B54; --cte:#27203E; --ctl:#B3A0F2;
@@ -29,7 +29,7 @@
 }
 :root[data-theme="dark"] {
   --bg:#12161F; --ink:#DFE5F0; --muted:#93A0B4; --card:#191F2B;
-  --line:#2B3342; --chip:#222A38; --sel:#DFE5F0;
+  --line:#2B3342; --chip:#222A38; --sel:#DFE5F0; --codebg:#10141C;
   --clt:#2E5A50; --clw:#23443D; --cle:#1A332E; --cll:#7FD0BE;
   --cot:#3B4276; --cow:#2D3259; --coe:#222642; --col:#98A0F0;
   --ctt:#46396E; --ctw:#352B54; --cte:#27203E; --ctl:#B3A0F2;
@@ -39,6 +39,7 @@
   --fprompt:#E77BAC; --ftools:#6CC578; --fevents:#4FC6CE; --fshare:#E0A94E;
 }
 
+* { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); margin: 0;
   font: 15px/1.55 system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; }
@@ -58,11 +59,11 @@ header.site .ref { margin-left: auto; font-size: 12px; color: var(--muted); whit
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; margin-right: 4px; }
 .chip { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px;
   border: 1px solid var(--line); background: var(--card); color: var(--ink);
-  border-radius: 999px; padding: 5px 13px 5px 9px; cursor: pointer; display: inline-flex;
+  border-radius: 999px; padding: 6px 13px 6px 9px; cursor: pointer; display: inline-flex;
   align-items: center; gap: 7px; transition: border-color .15s, background .15s; }
 .chip .sw { width: 14px; height: 0; border-top: 3px solid; border-radius: 2px; }
 .chip[data-flow="prompt"] .sw { border-color: var(--fprompt); }
-.chip[data-flow="tools"]  .sw { border-color: var(--ftools); border-top-style: solid; }
+.chip[data-flow="tools"]  .sw { border-color: var(--ftools); }
 .chip[data-flow="events"] .sw { border-color: var(--fevents); border-top-style: dashed; }
 .chip[data-flow="share"]  .sw { border-color: var(--fshare); border-top-style: dotted; }
 .chip:hover { border-color: var(--muted); }
@@ -70,29 +71,41 @@ header.site .ref { margin-left: auto; font-size: 12px; color: var(--muted); whit
 .chip.on[data-flow="tools"]  { border-color: var(--ftools);  background: color-mix(in srgb, var(--ftools) 12%, var(--card)); }
 .chip.on[data-flow="events"] { border-color: var(--fevents); background: color-mix(in srgb, var(--fevents) 12%, var(--card)); }
 .chip.on[data-flow="share"]  { border-color: var(--fshare);  background: color-mix(in srgb, var(--fshare) 12%, var(--card)); }
-.chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.chip:focus-visible, button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 20px; align-items: start; }
-@media (max-width: 980px) { .layout { grid-template-columns: 1fr; } aside.panel { position: static; } }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
+@media (max-width: 980px) { .layout { grid-template-columns: 1fr; } aside.panel { position: static; max-height: none; } }
 
 .mapcol { min-width: 0; }
-.mapbox { border: 1px solid var(--line); border-radius: 10px; background: var(--bg);
-  overflow-x: auto; overflow-y: hidden; }
+.mapbox { position: relative; border: 1px solid var(--line); border-radius: 10px; background: var(--bg);
+  overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
 .mapbox svg { display: block; width: 100%; min-width: 1040px; height: auto; }
+.mapbox svg.zoomed { touch-action: none; cursor: grab; }
+.mapbox svg.dragging { cursor: grabbing; }
+
+.zoomctl { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; z-index: 2; }
+.zoomctl button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--card); color: var(--ink); cursor: pointer; font-size: 16px; line-height: 1;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.zoomctl button:hover { border-color: var(--muted); }
+.maphint { position: absolute; left: 12px; bottom: 8px; font-size: 11px; color: var(--muted);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; pointer-events: none; }
 
 /* map text + shapes */
 text { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; fill: var(--ink); }
-.blab { font-size: 10.5px; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
+.blab { font-size: 10.5px; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
 .dlab { font-size: 11px; letter-spacing: 0.14em; fill: var(--muted); text-transform: uppercase;
-  paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
-.hoplab { font-size: 10.5px; paint-order: stroke; stroke: var(--bg); stroke-width: 3.5px; stroke-linejoin: round; }
+  paint-order: stroke; stroke: var(--bg); stroke-width: 3px; cursor: pointer; }
+.dlab:hover { fill: var(--ink); }
+.hoplab { font-size: 12px; font-weight: 600; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
 .lattice { stroke: var(--ink); opacity: 0.055; }
 .shadow { fill: var(--ink); opacity: 0.07; }
-.plate { fill-opacity: 0.06; stroke-opacity: 0.35; stroke-width: 1; }
+.plate { fill-opacity: 0.06; stroke-opacity: 0.35; stroke-width: 1; cursor: pointer; }
+.plate:hover { fill-opacity: 0.12; }
 .dep { stroke: var(--muted); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; fill: none; }
 
 .bld { cursor: pointer; }
-.bld polygon, .bld path, .bld ellipse, .bld rect { stroke-width: 0.8; }
+.bld polygon, .bld path, .bld ellipse { stroke-width: 0.8; }
 .bld .win { opacity: 0.4; stroke-width: 1; fill: none; }
 .bld.sel, .bld.lit { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--sel) 55%, transparent)); }
 .bld.sel .topf { stroke-width: 2.2; }
@@ -113,20 +126,26 @@ text { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, m
 
 /* flows */
 .flow { opacity: 0; pointer-events: none; transition: opacity .2s; }
-.flow.on { opacity: 1; }
-.flow line { stroke-width: 2.2; fill: none; }
+.flow.on { opacity: 1; pointer-events: auto; }
+.flow .hopseg { opacity: 0.3; cursor: pointer; }
+.flow .hopseg.hact { opacity: 1; }
+.flow .hopseg text { display: none; }
+.flow .hopseg.hact text { display: block; }
+.flow .hopseg line.hit { stroke: transparent; stroke-width: 14; }
+.flow line { stroke-width: 2.4; fill: none; }
 .flow .dot { stroke: var(--bg); stroke-width: 1.2; }
-.f-prompt line { stroke: var(--fprompt); } .f-prompt .dot, .f-prompt .hoplab { fill: var(--fprompt); }
-.f-tools  line { stroke: var(--ftools); }  .f-tools .dot,  .f-tools .hoplab  { fill: var(--ftools); }
-.f-events line { stroke: var(--fevents); stroke-dasharray: 6 4; } .f-events .dot, .f-events .hoplab { fill: var(--fevents); }
-.f-share  line { stroke: var(--fshare); stroke-dasharray: 2 4; stroke-linecap: round; } .f-share .dot, .f-share .hoplab { fill: var(--fshare); }
+.f-prompt line:not(.hit) { stroke: var(--fprompt); } .f-prompt .dot, .f-prompt .hoplab { fill: var(--fprompt); }
+.f-tools  line:not(.hit) { stroke: var(--ftools); }  .f-tools .dot,  .f-tools .hoplab  { fill: var(--ftools); }
+.f-events line:not(.hit) { stroke: var(--fevents); stroke-dasharray: 6 4; } .f-events .dot, .f-events .hoplab { fill: var(--fevents); }
+.f-share  line:not(.hit) { stroke: var(--fshare); stroke-dasharray: 2 4; stroke-linecap: round; } .f-share .dot, .f-share .hoplab { fill: var(--fshare); }
 
 /* legend */
-.legend { border: 1px solid var(--line); border-radius: 10px; background: var(--card);
-  margin-top: 14px; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 18px 30px; }
-.legend h3 { flex-basis: 100%; margin: 0 0 2px; font-size: 11px; letter-spacing: 0.14em;
+details.legend { border: 1px solid var(--line); border-radius: 10px; background: var(--card);
+  margin-top: 14px; padding: 0; }
+details.legend summary { cursor: pointer; padding: 12px 18px; font-size: 11px; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--muted);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.legend .body { display: flex; flex-wrap: wrap; gap: 18px 30px; padding: 4px 18px 16px; }
 .legend .col { display: flex; flex-direction: column; gap: 7px; min-width: 150px; }
 .legend .it { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink); }
 .legend .it svg { flex: none; }
@@ -152,18 +171,53 @@ aside.panel { position: sticky; top: 16px; border: 1px solid var(--line); border
   text-decoration: none; word-break: break-all; }
 .panel ul.files a:hover { outline: 1px solid var(--muted); }
 .panel ul.files .note { display: block; font-family: system-ui, sans-serif; font-size: 11.5px; color: var(--muted); }
-.panel ol.hops { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
-.panel ol.hops .hop-t { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
-.panel ol.hops .hop-route { color: var(--muted); font-size: 12px; }
-.panel .flowchips { display: flex; flex-wrap: wrap; gap: 6px; }
-.panel .flowchips button { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px;
-  border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px;
-  padding: 3px 9px; cursor: pointer; }
+.panel details.more { border-left: 2px solid var(--line); padding-left: 10px; margin: 10px 0; }
+.panel details.more summary { cursor: pointer; font-size: 12px; color: var(--muted);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.panel details.more p { margin-top: 8px; font-size: 13px; }
+.panel details.code { margin: 8px 0 0; }
+.panel details.code summary { cursor: pointer; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px; color: var(--muted); padding: 4px 0; }
+.panel details.code summary:hover { color: var(--ink); }
+.panel details.code summary .fname { color: var(--ink); }
+.panel pre { margin: 6px 0 0; background: var(--codebg); border: 1px solid var(--line); border-radius: 7px;
+  padding: 9px 11px; overflow-x: auto; font-size: 10.8px; line-height: 1.5;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; color: var(--ink); }
+.panel pre .lno { color: var(--muted); opacity: 0.65; user-select: none; }
+.panel .stepper { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; }
+.panel .stepper button { border: 1px solid var(--line); background: var(--chip); color: var(--ink);
+  border-radius: 7px; width: 32px; height: 28px; cursor: pointer; font-size: 14px; }
+.panel .stepper button:disabled { opacity: 0.35; cursor: default; }
+.panel .stepper .pos { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; color: var(--muted); }
+.panel ol.hops { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.panel ol.hops li { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+.panel ol.hops li:hover { border-color: var(--muted); }
+.panel ol.hops li.act { border-color: var(--hopc, var(--ink)); box-shadow: inset 3px 0 0 var(--hopc, var(--ink)); }
+.panel ol.hops .hop-t { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; font-weight: 600; }
+.panel ol.hops .hop-route { color: var(--muted); font-size: 11.5px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.panel ol.hops .hop-d { font-size: 12.5px; margin: 4px 0 2px; }
+.panel ol.hops li .xtra { display: none; }
+.panel ol.hops li.act .xtra { display: block; }
+.panel .flowchips, .panel .bldchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.panel .flowchips button, .panel .bldchips button { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px;
+  padding: 4px 10px; cursor: pointer; }
+.panel .flowchips button:hover, .panel .bldchips button:hover { border-color: var(--muted); }
 .panel .back { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px;
   border: none; background: none; color: var(--muted); cursor: pointer; padding: 0; margin-bottom: 10px; }
 .panel .back:hover { color: var(--ink); text-decoration: underline; }
 footer.src { margin-top: 26px; font-size: 12px; color: var(--muted); }
 footer.src code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+
+@media (max-width: 700px) {
+  .wrap { padding: 16px 12px 32px; }
+  header.site h1 { font-size: 21px; }
+  header.site .thesis { font-size: 13px; }
+  header.site .ref { margin-left: 0; }
+  .mapbox svg { min-width: 780px; }
+  .panel h2 { font-size: 17px; }
+}
 </style>
 
 <div class="wrap">
@@ -184,22 +238,32 @@ footer.src code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospa
 
   <div class="layout">
     <div class="mapcol">
-      <div class="mapbox"><div id="map"></div></div>
-
-      <div class="legend" id="legend">
-        <h3>Legend</h3>
-        <div class="col" id="leg-shapes"></div>
-        <div class="col" id="leg-districts"></div>
-        <div class="col">
-          <div class="it"><span class="ln" style="border-color:var(--fprompt)"></span>Prompt turn — control path</div>
-          <div class="it"><span class="ln" style="border-color:var(--ftools)"></span>Tool loop — side effects</div>
-          <div class="it"><span class="ln" style="border-color:var(--fevents);border-top-style:dashed"></span>Event fan-out — data back</div>
-          <div class="it"><span class="ln" style="border-color:var(--fshare);border-top-style:dotted"></span>Share sync — to the cloud</div>
-          <div class="it"><span class="ln" style="border-color:var(--muted);border-top-style:dashed;opacity:.5"></span>Static dependency</div>
+      <div class="mapbox">
+        <div class="zoomctl">
+          <button id="z-out" aria-label="Zoom out">−</button>
+          <button id="z-in" aria-label="Zoom in">+</button>
+          <button id="z-fit" aria-label="Fit map">⤢</button>
         </div>
-        <div class="note">Striped roofs mark the v2 Effect-native rewrite growing inside the v1 runtime.
-          The floating plate is SST-managed infrastructure; dashed outlines are external SaaS.</div>
+        <div id="map"></div>
+        <div class="maphint" id="maphint">tap a district name to zoom in</div>
       </div>
+
+      <details class="legend" id="legend">
+        <summary>Legend</summary>
+        <div class="body">
+          <div class="col" id="leg-shapes"></div>
+          <div class="col" id="leg-districts"></div>
+          <div class="col">
+            <div class="it"><span class="ln" style="border-color:var(--fprompt)"></span>Prompt turn — control path</div>
+            <div class="it"><span class="ln" style="border-color:var(--ftools)"></span>Tool loop — side effects</div>
+            <div class="it"><span class="ln" style="border-color:var(--fevents);border-top-style:dashed"></span>Event fan-out — data back</div>
+            <div class="it"><span class="ln" style="border-color:var(--fshare);border-top-style:dotted"></span>Share sync — to the cloud</div>
+            <div class="it"><span class="ln" style="border-color:var(--muted);border-top-style:dashed;opacity:.5"></span>Static dependency</div>
+          </div>
+          <div class="note">Striped roofs mark the v2 Effect-native rewrite growing inside the v1 runtime.
+            The floating plate is SST-managed infrastructure; dashed outlines are external SaaS.</div>
+        </div>
+      </details>
     </div>
 
     <aside class="panel" id="panel" aria-live="polite"></aside>
@@ -208,7 +272,8 @@ footer.src code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospa
   <footer class="src">
     Derived from source at commit <code>c387fe190</code> on <code>origin/dev</code> — topology from
     <code>sst.config.ts</code>, <code>infra/*.ts</code>, <code>AGENTS.md</code>, <code>CONTEXT.md</code>,
-    and the package entry points cited per building. Click any building or trace chip; click empty ground to reset.
+    and the package entry points and code excerpts cited per building. Tap a building, district, or trace chip;
+    tap empty ground to reset.
   </footer>
 </div>
 
@@ -226,16 +291,31 @@ const px = (gx, gy, z) => {
 const pts = a => a.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
 const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 
+/* Real code excerpts extracted from the repo at c387fe190 (see artifacts/system-map/extract-snippets.mjs) */
+const SNIPPETS = /*SNIP-START*/{"tui":{"file":"packages/opencode/src/cli/cmd/tui.ts","start":24,"code":"function createWorkerFetch(client: RpcClient): typeof fetch {\n  const fn = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {\n    const request = new Request(input, init)\n    const body = request.body ? await request.text() : undefined\n    const result = await client.call(\"fetch\", {\n      url: request.url,\n      method: request.method,\n      headers: Object.fromEntries(request.headers.entries()),\n      body,\n    })\n    return new Response(result.body, {"},"app":{"file":"packages/app/src/context/server-sdk.tsx","start":58,"code":"\nconst coalescedKey = (event: QueuedServerEvent) => {\n  if (event.payload.type === \"lsp.updated\") return `lsp.updated:${event.directory}`\n  if (event.payload.type === \"message.part.updated\") {\n    const part = event.payload.properties.part\n    return `message.part.updated:${event.directory}:${part.messageID}:${part.id}`\n  }\n  return undefined\n}\n\nexport function enqueueServerEvent(queue: QueuedServerEvent[], event: QueuedServerEvent) {\n  const key = coalescedKey(event)"},"desktop":{"file":"packages/desktop/src/main/sidecar.ts","start":55,"code":"useSystemCertificates()\nuseEnvProxy()\nconst { Server } = await import(\"virtual:opencode-server\")\n\nlistener = await Server.listen({\n  port: command.port,\n  hostname: command.hostname,\n  username: \"opencode\",\n  password: command.password,\n  cors: [\"oc://renderer\"],\n})\nparentPort.postMessage({ type: \"ready\" })"},"slack":{"file":"packages/slack/src/index.ts","start":16,"code":"console.log(\"🚀 Starting opencode server...\")\nconst opencode = await createOpencode({\n  port: 0,\n})\nconsole.log(\"✅ Opencode server ready\")\n\nconst sessions = new Map<string, { client: any; server: any; sessionId: string; channel: string; thread: string }>()\nvoid (async () => {\n  const events = await opencode.client.event.subscribe()\n  for await (const event of events.stream) {\n    if (event.type === \"message.part.updated\") {\n      const part = event.properties.part"},"ide":{"file":"packages/opencode/src/ide/index.ts","start":21,"code":"\nexport function ide() {\n  if (process.env[\"TERM_PROGRAM\"] === \"vscode\") {\n    const v = process.env[\"GIT_ASKPASS\"]\n    for (const ide of SUPPORTED_IDES) {\n      if (v?.includes(ide.name)) return ide.name\n    }\n  }\n  return \"unknown\"\n}\n\nexport function alreadyInstalled() {"},"sdk":{"file":"packages/sdk/js/src/v2/client.ts","start":21,"code":"const url = new URL(request.url)\nlet changed = false\n\nfor (const [name, key] of [\n  [\"x-opencode-directory\", \"directory\"],\n  [\"x-opencode-workspace\", \"workspace\"],\n] as const) {\n  const value = pick(\n    request.headers.get(name),\n    key === \"directory\" ? values.directory : values.workspace,\n    key === \"directory\" ? encodeURIComponent : undefined,\n  )"},"schema":{"file":"packages/schema/src/event-manifest.ts","start":1,"code":"export * as EventManifest from \"./event-manifest\"\n\nimport { Catalog } from \"./catalog\"\nimport { Durable } from \"./durable-event-manifest\"\nimport { Event } from \"./event\"\nimport { FileSystem } from \"./filesystem\"\nimport { FileSystemWatcher } from \"./filesystem-watcher\"\nimport { InstallationEvent } from \"./installation-event\"\nimport { Integration } from \"./integration\"\nimport { LegacyEvent } from \"./legacy-event\"\nimport { LspEvent } from \"./lsp-event\"\nimport { McpEvent } from \"./mcp-event\""},"protocol":{"file":"packages/protocol/src/groups/session.ts","start":106,"code":"export const makeSessionGroup = <I extends HttpApiMiddleware.AnyId, S>(sessionLocationMiddleware: Context.Key<I, S>) =>\n  HttpApiGroup.make(\"server.session\")\n    .add(\n      HttpApiEndpoint.get(\"session.list\", \"/api/session\", {\n        query: SessionsQuery,\n        success: Schema.Struct({\n          data: Schema.Array(Session.Info),\n          cursor: Schema.Struct({\n            previous: SessionsCursor.pipe(Schema.optional),\n            next: SessionsCursor.pipe(Schema.optional),\n          }),\n        }).annotate({ identifier: \"SessionsResponse\" }),"},"clientgen":{"file":"packages/client/package.json","start":9,"code":"  \"./effect\": \"./src/effect.ts\"\n},\n\"scripts\": {\n  \"generate\": \"bun run script/build.ts\",\n  \"check:generated\": \"bun run generate && git diff --exit-code -- src/generated src/generated-effect\",\n  \"test\": \"bun test --timeout 5000\",\n  \"typecheck\": \"tsgo --noEmit\"\n},\n\"dependencies\": {\n  \"@opencode-ai/schema\": \"workspace:*\",\n  \"@opencode-ai/protocol\": \"workspace:*\"\n},"},"server":{"file":"packages/opencode/src/server/server.ts","start":72,"code":"\nexport async function listen(opts: ListenOptions): Promise<Listener> {\n  const listener = await Effect.runPromise(listenEffect(opts))\n  return {\n    hostname: listener.hostname,\n    port: listener.port,\n    url: listener.url,\n    stop: (close?: boolean) => Effect.runPromiseExit(listener.stop(close)).then(() => undefined),\n  }\n}\n\nconst listenEffect: (opts: ListenOptions) => Effect.Effect<EffectListener, unknown> = Effect.fn(\"Server.listen\")("},"session":{"file":"packages/opencode/src/session/prompt.ts","start":1052,"code":"const prompt: (input: PromptInput) => Effect.Effect<SessionV1.WithParts, Image.Error> = Effect.fn(\n  \"SessionPrompt.prompt\",\n)(function* (input: PromptInput) {\n  const session = yield* sessions.get(input.sessionID).pipe(Effect.orDie)\n  yield* revert.cleanup(session)\n  const message = yield* createUserMessage(input)\n  yield* sessions.touch(input.sessionID)\n\n  const permissions: PermissionV1.Rule[] = []\n  for (const [t, enabled] of Object.entries(input.tools ?? {})) {\n    permissions.push({ permission: t, action: enabled ? \"allow\" : \"deny\", pattern: \"*\" })\n  }"},"provider":{"file":"packages/opencode/src/session/llm.ts","start":226,"code":"if (flags.experimentalNativeLlm) {\n  const native = LLMNativeRuntime.stream({\n    model: input.model,\n    provider: item,\n    auth: info,\n    llmClient,\n    messages: prepared.messages,\n    tools: prepared.tools,\n    toolChoice: input.toolChoice,\n    temperature: prepared.params.temperature,\n    topP: prepared.params.topP,\n    topK: prepared.params.topK,"},"auth":{"file":"packages/opencode/src/auth/index.ts","start":7,"code":"\nexport const OAUTH_DUMMY_KEY = \"opencode-oauth-dummy-key\"\n\nconst file = path.join(Global.Path.data, \"auth.json\")\n\nconst fail = (message: string) => (cause: unknown) => new AuthError({ message, cause })\n\nexport class Oauth extends Schema.Class<Oauth>(\"OAuth\")({\n  type: Schema.Literal(\"oauth\"),\n  refresh: Schema.String,\n  access: Schema.String,\n  expires: NonNegativeInt,"},"config":{"file":"packages/opencode/src/config/config.ts","start":138,"code":"\nfunction globalConfigFile() {\n  const candidates = [\"opencode.jsonc\", \"opencode.json\", \"config.json\"].map((file) =>\n    path.join(Global.Path.config, file),\n  )\n  for (const file of candidates) {\n    if (existsSync(file)) return file\n  }\n  return candidates[0]\n}\n\nfunction patchJsonc(input: string, patch: unknown, path: string[] = []): string {"},"bus":{"file":"packages/core/src/event.ts","start":125,"code":"\nexport interface Interface {\n  readonly publish: <D extends Definition>(\n    definition: D,\n    data: Data<D>,\n    options?: PublishOptions,\n  ) => Effect.Effect<Payload<D>>\n  readonly subscribe: <D extends Definition>(definition: D) => Stream.Stream<Payload<D>>\n  readonly all: () => Stream.Stream<Payload>\n  readonly durable: (input: { readonly aggregateID: string; readonly after?: number }) => Stream.Stream<Payload>\n  /** @deprecated Use `all()` and consume the returned stream. */\n  readonly listen: (listener: Subscriber) => Effect.Effect<Unsubscribe>"},"sqlite":{"file":"packages/core/src/database/database.ts","start":24,"code":"Effect.gen(function* () {\n  const db = yield* makeDatabase\n\n  yield* db.run(\"PRAGMA journal_mode = WAL\")\n  yield* db.run(\"PRAGMA synchronous = NORMAL\")\n  yield* db.run(\"PRAGMA busy_timeout = 5000\")\n  yield* db.run(\"PRAGMA cache_size = -64000\")\n  yield* db.run(\"PRAGMA foreign_keys = ON\")\n  yield* db.run(\"PRAGMA wal_checkpoint(PASSIVE)\")\n  yield* DatabaseMigration.apply(db)\n\n  return { db }"},"plugins":{"file":"packages/opencode/src/plugin/index.ts","start":6,"code":"  PluginModule,\n  WorkspaceAdapter as PluginWorkspaceAdapter,\n} from \"@opencode-ai/plugin\"\nimport { Config } from \"@/config/config\"\nimport { createOpencodeClient } from \"@opencode-ai/sdk\"\nimport { ServerAuth } from \"@/server/auth\"\nimport { CodexAuthPlugin } from \"./openai/codex\"\nimport { Session } from \"@/session/session\"\nimport { NamedError } from \"@opencode-ai/core/util/error\"\nimport { CopilotAuthPlugin } from \"./github-copilot/copilot\"\nimport { ModalPlugin } from \"./modal/modal\"\nimport { gitlabAuthPlugin as GitlabAuthPlugin } from \"opencode-gitlab-auth\""},"permission":{"file":"packages/opencode/src/permission/index.ts","start":28,"code":"export function evaluate(permission: string, pattern: string, ...rulesets: PermissionV1.Ruleset[]): PermissionV1.Rule {\n  return (\n    rulesets\n      .flat()\n      .findLast((rule) => Wildcard.match(permission, rule.permission) && Wildcard.match(pattern, rule.pattern)) ?? {\n      action: \"ask\",\n      permission,\n      pattern: \"*\",\n    }\n  )\n}"},"tools":{"file":"packages/opencode/src/tool/registry.ts","start":88,"code":"Effect.gen(function* () {\n  const config = yield* Config.Service\n  const plugin = yield* Plugin.Service\n  const agents = yield* Agent.Service\n  const truncate = yield* Truncate.Service\n  const flags = yield* RuntimeFlags.Service\n  const mcp = yield* MCP.Service\n\n  const invalid = yield* InvalidTool\n  const task = yield* TaskTool\n  const read = yield* ReadTool\n  const question = yield* QuestionTool"},"lsp":{"file":"packages/opencode/src/lsp/lsp.ts","start":114,"code":"  servers: Record<string, LSPServer.Info>\n  broken: Set<string>\n  spawning: Map<string, Promise<LSPClient.Info | undefined>>\n}\n\nexport interface Interface {\n  readonly init: () => Effect.Effect<void>\n  readonly status: () => Effect.Effect<Status[]>\n  readonly hasClients: (file: string) => Effect.Effect<boolean>\n  readonly touchFile: (input: string, diagnostics?: \"document\" | \"full\") => Effect.Effect<void>\n  readonly diagnostics: () => Effect.Effect<Record<string, LSPClient.Diagnostic[]>>\n  readonly hover: (input: LocInput) => Effect.Effect<any>"},"mcp":{"file":"packages/opencode/src/mcp/index.ts","start":666,"code":"const tools = Effect.fn(\"MCP.tools\")(function* () {\n  const result: Record<string, McpTool> = {}\n  const s = yield* InstanceState.get(state)\n\n  const cfg = yield* cfgSvc.get()\n  const config = cfg.mcp ?? {}\n  const defaultTimeout = cfg.experimental?.mcp_timeout\n\n  for (const [clientName, client] of Object.entries(s.clients)) {\n    if (s.status[clientName]?.status !== \"connected\") continue\n    const mcpConfig = config[clientName]\n    const listed = s.defs[clientName]"},"workspace":{"file":"packages/opencode/src/session/revert.ts","start":31,"code":"const sessions = yield* Session.Service\nconst snap = yield* Snapshot.Service\nconst storage = yield* Storage.Service\nconst events = yield* EventV2Bridge.Service\nconst summary = yield* SessionSummary.Service\nconst state = yield* SessionRunState.Service\n\nconst revert = Effect.fn(\"SessionRevert.revert\")(function* (input: RevertInput) {\n  yield* state.assertNotBusy(input.sessionID)\n  const all = yield* sessions.messages({ sessionID: input.sessionID }).pipe(Effect.orDie)\n  let lastUser: SessionV1.User | undefined\n  const session = yield* sessions.get(input.sessionID).pipe(Effect.orDie)"},"ext":{"file":"packages/llm/src/protocols/anthropic-messages.ts","start":29,"code":"export const DEFAULT_BASE_URL = \"https://api.anthropic.com/v1\"\nexport const PATH = \"/messages\"\n\n// =============================================================================\n// Request Body Schema\n// =============================================================================\nconst AnthropicCacheControl = Schema.Struct({\n  type: Schema.tag(\"ephemeral\"),\n  ttl: Schema.optional(Schema.Literals([\"5m\", \"1h\"])),\n})\n\nconst AnthropicTextBlock = Schema.Struct({"},"modelsdev":{"file":"packages/core/src/models-dev.ts","start":175,"code":"const fetchApi = Effect.fn(\"ModelsDev.fetchApi\")(function* () {\n  return yield* HttpClientRequest.get(`${source}/api.json`).pipe(\n    HttpClientRequest.setHeader(\"User-Agent\", USER_AGENT),\n    http.execute,\n    Effect.flatMap((res) => res.text),\n    Effect.timeout(\"10 seconds\"),\n  )\n})\n\nconst loadFromDisk = fs.readJson(Flag.OPENCODE_MODELS_PATH ?? filepath).pipe(\n  Effect.catch((error) => {\n    if ("},"docs":{"file":"packages/web/astro.config.mjs","start":1,"code":"// @ts-check\nimport { defineConfig } from \"astro/config\"\nimport starlight from \"@astrojs/starlight\"\nimport solidJs from \"@astrojs/solid-js\"\nimport cloudflare from \"@astrojs/cloudflare\"\nimport theme from \"toolbeam-docs-theme\"\nimport config from \"./config.mjs\"\nimport { rehypeHeadingIds } from \"@astrojs/markdown-remark\"\nimport rehypeAutolinkHeadings from \"rehype-autolink-headings\"\nimport { spawnSync } from \"child_process\"\n\n// https://astro.build/config"},"webapp":{"file":"infra/app.ts","start":62,"code":"new sst.cloudflare.StaticSite(\"WebApp\", {\n  domain: \"app.\" + domain,\n  path: \"packages/app\",\n  build: {\n    command: \"bun turbo build\",\n    output: \"./dist\",\n  },\n})"},"stats":{"file":"infra/stats.ts","start":9,"code":"const inferenceNamespace = new aws.s3tables.Namespace(\"LakeInferenceNamespace\", {\n  namespace: \"inference\",\n  tableBucketArn: tableBucket.arn,\n})\n\nconst inferenceEventTable = new aws.s3tables.Table(\n  \"LakeInferenceEventTable\",\n  {\n    name: \"event\",\n    namespace: inferenceNamespace.namespace,\n    tableBucketArn: inferenceNamespace.tableBucketArn,\n    format: \"ICEBERG\","},"lake":{"file":"infra/lake.ts","start":159,"code":"\nconst firehose = new aws.kinesis.FirehoseDeliveryStream(\n  \"LakeFirehose\",\n  {\n    name: `opencode-${$app.stage}-lake-ingest`,\n    destination: \"iceberg\",\n    icebergConfiguration: {\n      appendOnly: true,\n      bufferingInterval: 60,\n      bufferingSize: 1,\n      catalogArn: glueS3TablesChildCatalogArn,"},"console":{"file":"infra/console.ts","start":61,"code":"const GOOGLE_CLIENT_ID = new sst.Secret(\"GOOGLE_CLIENT_ID\")\nconst authStorage = new sst.cloudflare.Kv(\"AuthStorage\")\nexport const auth = new sst.cloudflare.Worker(\"AuthApi\", {\n  domain: `auth.${domain}`,\n  handler: \"packages/console/function/src/auth.ts\",\n  url: true,\n  link: [database, authStorage, GITHUB_CLIENT_ID_CONSOLE, GITHUB_CLIENT_SECRET_CONSOLE, GOOGLE_CLIENT_ID],\n})\n\n////////////////\n// GATEWAY"},"planetscale":{"file":"infra/console.ts","start":16,"code":"const branch =\n  $app.stage === \"production\"\n    ? planetscale.getBranchOutput({\n        name: \"production\",\n        organization: cluster.organization,\n        database: cluster.name,\n      })\n    : new planetscale.Branch(\"DatabaseBranch\", {\n        database: cluster.name,\n        organization: cluster.organization,\n        name: $app.stage,\n        parentBranch: \"production\","},"api":{"file":"packages/function/src/api.ts","start":149,"code":"})\n.post(\"/share_sync\", async (c) => {\n  const body = await c.req.json<{\n    sessionID: string\n    secret: string\n    key: string\n    content: any\n  }>()\n  const name = SyncServer.shortName(body.sessionID)\n  const id = c.env.SYNC_SERVER.idFromName(name)\n  const stub = c.env.SYNC_SERVER.get(id)"},"r2":{"file":"packages/function/src/api.ts","start":52,"code":"  return new Response(\"Error: Invalid key\", { status: 400 })\n\n// store message\nawait this.env.Bucket.put(`share/${key}.json`, JSON.stringify(content), {\n  httpMetadata: {\n    contentType: \"application/json\",\n  },\n})\nawait this.ctx.storage.put(key, content)\nconst clients = this.ctx.getWebSockets()\nconsole.log(\"SyncServer publish\", key, \"to\", clients.length, \"subscribers\")"},"enterprise":{"file":"packages/enterprise/src/core/share.ts","start":10,"code":"export namespace Share {\n  export const Info = z.object({\n    id: z.string(),\n    secret: z.string(),\n    sessionID: z.string(),\n  })\n  export type Info = z.infer<typeof Info>\n\n  export const Data = z.discriminatedUnion(\"type\", [\n    z.object({\n      type: z.literal(\"session\"),\n      data: z.custom<Session>(),"}}/*SNIP-END*/;
+
 /* ---------- data ---------- */
 
 const DISTRICTS = [
-  { id: "clients", label: "Clients", cls: "pl-cl", gx: 0, gy: 9, w: 9.6, d: 10.2, z: 0 },
-  { id: "contract", label: "Contract · v2", cls: "pl-ct", gx: 3.6, gy: 1.6, w: 8.2, d: 3.8, z: 0, lc: "D" },
+  { id: "clients", label: "Clients", cls: "pl-cl", gx: 0, gy: 9, w: 9.6, d: 10.2, z: 0,
+    name: "Clients", pkgs: ["packages/tui", "packages/app", "packages/desktop", "packages/slack", "packages/opencode/src/{ide,acp}"],
+    desc: "Five ways into the same server. None of them owns any session logic — they render state and send intents. The TUI embeds the server in a worker thread; the desktop app spawns it as an Electron sidecar; the web app connects to any server it can reach; Slack and IDEs bridge their own protocols onto the SDK." },
+  { id: "contract", label: "Contract · v2", cls: "pl-ct", gx: 3.6, gy: 1.6, w: 8.2, d: 3.8, z: 0, lc: "D",
+    name: "Contract quarter", pkgs: ["packages/schema", "packages/protocol", "packages/client", "packages/httpapi-codegen", "packages/sdk"],
+    desc: "The typed boundary between clients and core, and the leading edge of the v2 rewrite. Schema holds pure domain types; Protocol declares endpoints without implementation; httpapi-codegen compiles them into generated clients. AGENTS.md pins the layering: Schema → Core/Protocol → Server; client code may never import Core or Server." },
   { id: "sdkpad", label: "", cls: "pl-ct", gx: 8.3, gy: 7, w: 3, d: 3, z: 0 },
-  { id: "core", label: "Local core — one process", cls: "pl-co", gx: 10.6, gy: 2.6, w: 13.4, d: 12.4, z: 0 },
-  { id: "workspace", label: "Working dir", cls: "pl-ws", gx: 14.6, gy: 16.2, w: 6.4, d: 4, z: 0 },
-  { id: "ext", label: "External model APIs", cls: "pl-ex", gx: 26, gy: 4, w: 5.6, d: 8, z: 0 },
-  { id: "cloud", label: "opencode.ai edge — SST", cls: "pl-cd", gx: 17, gy: -7.4, w: 15, d: 7.8, z: 30 },
+  { id: "core", label: "Local core — one process", cls: "pl-co", gx: 10.6, gy: 2.6, w: 13.4, d: 12.4, z: 0,
+    name: "Local core", pkgs: ["packages/opencode", "packages/core", "packages/server", "packages/llm"],
+    desc: "One process is the whole product: HTTP server, session engine, tool execution, permissions, LSP, MCP, plugins, provider streaming, and the SQLite event store. The v1 implementation (packages/opencode) and the v2 Effect-native rewrite (packages/core + server) are both mounted on the same server today — striped roofs mark v2 territory." },
+  { id: "workspace", label: "Working dir", cls: "pl-ws", gx: 14.6, gy: 16.2, w: 6.4, d: 4, z: 0,
+    name: "Working directory", pkgs: ["your repo"],
+    desc: "The directory the agent edits. Every mutation happens behind git-backed snapshots so a turn can be reverted; worktrees isolate parallel work." },
+  { id: "ext", label: "External model APIs", cls: "pl-ex", gx: 26, gy: 4, w: 5.6, d: 8, z: 0,
+    name: "External model APIs", pkgs: ["packages/llm/src/providers", "packages/llm/src/protocols"],
+    desc: "The only mandatory external dependency: the model providers themselves. Ten native adapters speak five wire dialects; the models.dev catalog supplies model metadata." },
+  { id: "cloud", label: "opencode.ai edge — SST", cls: "pl-cd", gx: 17, gy: -7.4, w: 15, d: 7.8, z: 30,
+    name: "opencode.ai edge", pkgs: ["packages/function", "packages/web", "packages/console", "packages/enterprise", "packages/stats", "infra/*.ts"],
+    desc: "The entire cloud footprint, deployed by SST with Cloudflare as home (sst.config.ts): share sync, accounts and billing, docs, app hosting, and an AWS telemetry lake. Deliberately not on the prompt path — the product works with zero cloud." },
 ];
 
 /* kind: tower | slab | cyl | mast | ghost   dist: cl co ct cd ws st ex */
@@ -243,6 +323,7 @@ const B = [
   { id:"tui", n:"TUI", gx:5, gy:10, w:2.4, d:2.4, h:48, kind:"tower", dist:"cl",
     pkg:"packages/tui", district:"Clients",
     role:"The default interface: a SolidJS app rendered to the terminal via OpenTUI. Running bare `opencode` puts the TUI on the main thread and the whole server in a worker thread beside it — fetch and events cross an in-process RPC bridge, no TCP.",
+    deep:"In release builds OPENCODE_WORKER_PATH points at the bundled worker script. The worker's rpc.server({ port, hostname }) can additionally open a real TCP listener, so external clients can attach to the same embedded instance. The TUI even has its own plugin runtime for UI extensions (packages/tui/src/plugin/runtime.tsx).",
     files:[["packages/tui/src/app.tsx","root component, provider tree, keymap"],
            ["packages/tui/src/context/sdk.tsx","SDK client + batched event pump"],
            ["packages/opencode/src/cli/cmd/tui.ts","createWorkerFetch / createEventSource"],
@@ -250,13 +331,15 @@ const B = [
   { id:"app", n:"App", gx:0.8, gy:13.6, w:2.4, d:2.4, h:42, kind:"tower", dist:"cl",
     pkg:"packages/app", district:"Clients",
     role:"The SolidJS single-page GUI. The same bundle is the Electron renderer and the hosted app.opencode.ai — it keeps a registry of server URLs with health polling and opens a directory-scoped SDK per connection.",
+    deep:"State is event-driven: server-sync.tsx applies the SSE stream through a v2 reducer (server-session-v2-reducer.ts) instead of refetching. Multi-server, multi-directory tabs are first-class — each tab is a (server, directory) pair.",
     files:[["packages/app/src/app.tsx","router + provider stack"],
            ["packages/app/src/context/server.tsx","server connection registry"],
            ["packages/app/src/context/server-sdk.tsx","per-directory SDK"],
            ["packages/app/src/context/server-sync.tsx","event-driven state sync"]] },
   { id:"desktop", n:"Desktop", gx:0.8, gy:9.8, w:2.4, d:2.4, h:34, kind:"tower", dist:"cl",
     pkg:"packages/desktop", district:"Clients",
-    role:"Electron shell. The main process boots the opencode server in-process as a worker sidecar — Server.listen({ cors: [\"oc://renderer\"] }) — and points the renderer (the App SPA) at 127.0.0.1 with basic auth.",
+    role:"Electron shell. The main process boots the opencode server in-process as a worker sidecar and points the renderer (the App SPA) at 127.0.0.1 with basic auth.",
+    deep:"The sidecar imports virtual:opencode-server and calls Server.listen({ hostname, port, password, cors: [\"oc://renderer\"] }) — the renderer's custom oc:// scheme is the only allowed origin. The server is an architectural boundary here, not a network one.",
     files:[["packages/desktop/src/main/index.ts","app bootstrap"],
            ["packages/desktop/src/main/server.ts","spawnLocalServer"],
            ["packages/desktop/src/main/sidecar.ts","worker running Server.listen"]] },
@@ -268,33 +351,40 @@ const B = [
   { id:"ide", n:"IDE · ACP", gx:0.9, gy:16.9, w:1.8, d:1.8, h:18, kind:"tower", dist:"cl",
     pkg:"packages/opencode/src/{ide,acp}", district:"Clients",
     role:"Two editor paths: a VS Code-family extension auto-installed when a supported terminal is detected, and the Agent Client Protocol for Zed-style editors speaking over stdio.",
+    deep:"Detection reads TERM_PROGRAM and GIT_ASKPASS to recognize VS Code, Cursor, Windsurf, VSCodium, and Insiders, then installs the sst-dev.opencode extension. The ACP side maps sessions, tools, and permission asks onto the protocol so any ACP editor gets the full agent.",
     files:[["packages/opencode/src/ide/index.ts","VS Code / Cursor / Windsurf detection + install"],
            ["packages/opencode/src/acp/agent.ts","ACP agent implementation"],
            ["packages/opencode/src/cli/cmd/acp.ts","`opencode acp` entry"]] },
   { id:"sdk", n:"SDK", gx:8.7, gy:7.4, w:2.2, d:2.2, h:18, kind:"tower", dist:"ct",
     pkg:"@opencode-ai/sdk", district:"Contract",
     role:"The single typed boundary. Every client — TUI, App, desktop renderer, Slack, even plugins — calls createOpencodeClient, which stamps x-opencode-directory / x-opencode-workspace headers so one server process can host many project instances.",
+    deep:"createOpencodeServer spawns `opencode serve` for embedders like the Slack bot. The header rewrite is the whole multiplexing trick: the server's instance-context middleware reads those headers and routes the request to the right project instance.",
     files:[["packages/sdk/js/src/v2/client.ts","createOpencodeClient + header rewrite"],
            ["packages/sdk/js/src/v2/server.ts","server launcher"],
            ["packages/sdk/openapi.json","generated spec"]] },
   { id:"schema", n:"schema", gx:4.2, gy:2.2, w:1.8, d:1.8, h:18, kind:"tower", dist:"ct", v2:true,
     pkg:"@opencode-ai/schema", district:"Contract · v2",
     role:"Pure Effect Schema domain types — events, permissions, models, prompts — the dependency leaf everything else shares.",
+    deep:"Also owns the event manifests: the typed catalog of every event, durable and ephemeral, that a client can receive. Neither Schema nor Protocol may transitively load databases, session execution, providers, or native modules (CONTEXT.md).",
     files:[["packages/schema/src/index.ts","shared domain types"],
-           ["packages/schema/src/event-manifest.ts","event catalog"]] },
+           ["packages/schema/src/event-manifest.ts","event catalog"],
+           ["packages/schema/src/durable-event-manifest.ts","durable event catalog"]] },
   { id:"protocol", n:"protocol", gx:6.6, gy:2, w:1.8, d:1.8, h:24, kind:"tower", dist:"ct", v2:true,
     pkg:"@opencode-ai/protocol", district:"Contract · v2",
     role:"The declarative HTTP contract: endpoint groups, payloads, errors, middleware placement — no implementation. The server hosts it; codegen compiles it into clients.",
+    deep:"AGENTS.md pins the dependency direction: Schema → Core and Protocol → Server. Client runtime code may depend on Schema and Protocol but never Core or Server; sdk-next composes Client, Core, and Server into the embedded host.",
     files:[["packages/protocol/src/api.ts","API definition"],
            ["packages/protocol/src/groups/session.ts","session endpoint group"]] },
   { id:"clientgen", n:"client-gen", gx:9.2, gy:2.2, w:1.8, d:1.8, h:20, kind:"tower", dist:"ct", v2:true,
     pkg:"@opencode-ai/client", district:"Contract · v2",
     role:"Generated Promise and Effect clients compiled from the protocol contract by httpapi-codegen. Regenerated with `bun run generate`; never edited by hand (AGENTS.md).",
+    deep:"The Promise client is deliberately zero-Effect — browser-safe bundles are enforced by import-boundary tests. The /effect export depends only on Effect, Schema, and Protocol.",
     files:[["packages/client/src/generated","generated client output"],
            ["packages/httpapi-codegen","the code generator"]] },
   { id:"server", n:"Server", gx:14, gy:3.2, w:3, d:3, h:64, kind:"tower", dist:"co",
     pkg:"packages/opencode/src/server", district:"Local core",
     role:"One HTTP app serves every client: the v1 API surface composed with the mounted v2 route layer. Middleware resolves auth and the target project instance per request, and the server advertises itself over mDNS for LAN discovery.",
+    deep:"Route groups: session, event, config, file, permission, provider, pty, question, project, workspace, mcp, sync, tui, control, control-plane, global, experimental. The v2 layer (packages/server) builds Effect HttpApi handlers from the Protocol contract and is provided with core services.",
     files:[["packages/opencode/src/server/server.ts","Server.listen / lifecycle"],
            ["packages/opencode/src/server/routes/instance/httpapi/api.ts","full API composition"],
            ["packages/opencode/src/server/routes/instance/httpapi/middleware/instance-context.ts","directory → instance routing"],
@@ -303,6 +393,7 @@ const B = [
   { id:"session", n:"Sessions", gx:14.2, gy:7.4, w:3, d:3, h:46, kind:"tower", dist:"co",
     pkg:"packages/opencode/src/session", district:"Local core",
     role:"The agent loop: durable prompt admission, history projection and compaction, one LLM.stream per provider turn, and a processor state machine folding stream deltas into message parts and tool calls.",
+    deep:"V2 semantics (CONTEXT.md): prompts are admitted as durable session_input rows before execution, then promoted at safe provider-turn boundaries; steering prompts join mid-drain, queued prompts wait for idle. Compaction starts a new context epoch with a freshly rendered baseline system context, and mid-conversation system messages carry context changes chronologically.",
     files:[["packages/opencode/src/session/prompt.ts","SessionPrompt.prompt / .loop"],
            ["packages/opencode/src/session/processor.ts","stream → parts / tool-call settlement"],
            ["packages/opencode/src/session/system.ts","system context assembly"],
@@ -311,6 +402,7 @@ const B = [
   { id:"provider", n:"Providers", gx:18.6, gy:3.4, w:2.6, d:2.6, h:40, kind:"tower", dist:"co",
     pkg:"packages/opencode/src/provider + packages/llm", district:"Local core",
     role:"Model resolution and streaming. Merges the models.dev catalog with configured credentials to pick a model, then streams via the Vercel AI SDK path or the native packages/llm runtime with per-provider wire protocols.",
+    deep:"provider.ts is ~2,000 lines of resolution — getProvider, getModel, closest, parseModel — merging catalog metadata, auth methods, and config overrides. transform.ts munges messages per provider quirk. The native runtime (llm package) owns exact wire semantics; the AI-SDK path remains as the compatibility fallback.",
     files:[["packages/opencode/src/provider/provider.ts","getProvider / getModel / catalog merge"],
            ["packages/opencode/src/session/llm.ts","LLM.stream dispatch"],
            ["packages/opencode/src/session/llm/native-runtime.ts","native streaming path"],
@@ -319,6 +411,7 @@ const B = [
   { id:"auth", n:"Auth", gx:22, gy:3.6, w:1.6, d:1.6, h:18, kind:"tower", dist:"co",
     pkg:"packages/opencode/src/auth", district:"Local core",
     role:"Provider credentials in ~/.local/share/opencode/auth.json — OAuth, API key, or well-known — plus basic-auth protection for the server itself. The v2 rewrite moves credentials into SQLite.",
+    deep:"OPENCODE_AUTH_CONTENT injects credentials via environment for CI. OPENCODE_SERVER_PASSWORD gates the HTTP surface (enforced by the authorization middleware); MCP servers run their own OAuth flows under mcp/.",
     files:[["packages/opencode/src/auth/index.ts","auth.json read/write"],
            ["packages/opencode/src/provider/auth.ts","provider OAuth flows"],
            ["packages/opencode/src/server/auth.ts","server password auth"],
@@ -326,12 +419,14 @@ const B = [
   { id:"config", n:"Config", gx:11.2, gy:3.6, w:1.8, d:1.8, h:16, kind:"tower", dist:"co",
     pkg:"packages/opencode/src/config", district:"Local core",
     role:"Global XDG config merged with per-project opencode.json(c) walking up from cwd — JSONC parsing, env expansion, hot reload via a watcher.",
+    deep:"Merge order: $XDG_CONFIG_HOME/opencode/{config,opencode}.json(c), then each opencode.json(c) found walking up from the working directory. OPENCODE_DISABLE_PROJECT_CONFIG turns the project layer off. Sub-schemas (agents, MCP, LSP, providers, plugins, formatters) live in packages/core/src/config.",
     files:[["packages/opencode/src/config/config.ts","merge order"],
            ["packages/opencode/src/config/parse.ts","JSONC + env expansion"],
            ["packages/core/src/config/watcher.ts","hot reload"]] },
   { id:"bus", n:"Bus", gx:11.2, gy:7.8, w:1.6, d:1.6, h:22, kind:"mast", dist:"co", v2:true,
     pkg:"packages/core/src/event", district:"Local core",
     role:"Three layers of eventing: typed durable EventV2 (event-sourced, in SQLite) → a bridge stamping each event with its Location (directory / project / workspace) → the process-wide GlobalBus every subscriber taps.",
+    deep:"Durable events carry aggregate sequence numbers and can be replayed (`sessions.events({ after })`); ephemeral events are live-only with no replay guarantee. The SSE endpoint filters by directory and workspace and heartbeats every 10 seconds.",
     files:[["packages/core/src/event.ts","EventV2 durable/ephemeral bus"],
            ["packages/opencode/src/event-v2-bridge.ts","location stamping"],
            ["packages/opencode/src/bus/global.ts","GlobalBus fan-out"],
@@ -339,6 +434,7 @@ const B = [
   { id:"sqlite", n:"SQLite", cx:19.9, cy:8.9, r:1.3, h:26, kind:"cyl", dist:"st", v2:true,
     pkg:"packages/core/src/database", district:"Local core",
     role:"The durable home: ~/.local/share/opencode/opencode.db (Drizzle, WAL). Sessions, messages, parts, events, and credentials live here as event-sourced projections; legacy JSON blobs still sit beside it.",
+    deep:"Tables include session, message, part, session_message, session_input (the durable prompt inbox), plus event, share, and credential tables. Migrations run at open; the projector turns published events into rows so reads never race writes.",
     files:[["packages/core/src/database/database.ts","SQLite + migrations"],
            ["packages/core/src/session/sql.ts","session/message/part tables"],
            ["packages/core/src/session/store.ts","read paths"],
@@ -346,18 +442,21 @@ const B = [
   { id:"plugins", n:"Plugins", gx:11.2, gy:11.8, w:1.8, d:1.8, h:20, kind:"tower", dist:"co",
     pkg:"packages/opencode/src/plugin", district:"Local core",
     role:"npm and file plugins loaded into the host; hooks fire through trigger(...). Each plugin receives its own SDK client pointed back at the hosting server — plugins are clients too.",
+    deep:"A set of built-in internal plugins implement provider auth: OpenAI Codex, GitHub Copilot, Azure, Cloudflare, DigitalOcean, xAI, Snowflake Cortex, Modal. Public hook and tool types ship from @opencode-ai/plugin.",
     files:[["packages/opencode/src/plugin/index.ts","Plugin.Service + SDK handoff"],
            ["packages/opencode/src/plugin/loader.ts","module loading"],
            ["packages/plugin/src/index.ts","public hook/tool types"]] },
   { id:"permission", n:"Perms", gx:13.8, gy:11.9, w:1.8, d:1.8, h:18, kind:"tower", dist:"co",
     pkg:"packages/opencode/src/permission", district:"Local core",
     role:"Every side-effecting tool call passes the ruleset here first; unresolved asks surface to clients as permission requests and block the call until answered.",
+    deep:"Rules pattern-match on the tool and its arguments (arity.ts). The effective agent at call time owns the decision — a later agent switch cannot change an in-flight call's policy (CONTEXT.md).",
     files:[["packages/opencode/src/permission/evaluate.ts","ruleset evaluation"],
            ["packages/opencode/src/permission/index.ts","permission service"],
            ["packages/opencode/src/permission/arity.ts","pattern matching"]] },
   { id:"tools", n:"Tools", gx:16.4, gy:11.4, w:2.6, d:2.6, h:30, kind:"tower", dist:"co",
     pkg:"packages/opencode/src/tool", district:"Local core",
     role:"The tool registry assembles builtins (shell, edit, read, glob, grep, patch, webfetch, task…) plus plugin and MCP tools, filtered per agent and permission ruleset; results are bounded before they re-enter history.",
+    deep:"Oversized output keeps a bounded preview in history while the full text moves to a managed tool-output file the model can still read by path. Each builtin's prompt lives beside it as a .txt file; code-mode.ts exposes schema-described tools to confined generated code.",
     files:[["packages/opencode/src/tool/registry.ts","registry assembly"],
            ["packages/opencode/src/tool/tool.ts","Tool.Def contract"],
            ["packages/opencode/src/tool/shell.ts","bash tool"],
@@ -365,6 +464,7 @@ const B = [
   { id:"lsp", n:"LSP", gx:19.9, gy:11.7, w:2, d:2, h:24, kind:"tower", dist:"co",
     pkg:"packages/opencode/src/lsp", district:"Local core",
     role:"40+ language-server definitions spawn lazily per project root over stdio; diagnostics, hover, and symbols feed both tools and the UI.",
+    deep:"Spawn is keyed by root + server id with an in-flight map so concurrent touches never double-spawn; binaries are located or downloaded on demand. Exposes touchFile, diagnostics, hover, definition, references, symbols, and call hierarchy.",
     files:[["packages/opencode/src/lsp/server.ts","server definitions + spawn"],
            ["packages/opencode/src/lsp/lsp.ts","lazy lifecycle, diagnostics API"],
            ["packages/opencode/src/lsp/client.ts","JSON-RPC client"]] },
@@ -383,6 +483,7 @@ const B = [
   { id:"ext", n:"Model APIs", gx:26.8, gy:4.8, w:2.6, d:3.2, h:38, kind:"ghost", dist:"ex",
     pkg:"external SaaS", district:"External",
     role:"Anthropic, OpenAI, Google, Bedrock, Azure, GitHub Copilot, OpenRouter, xAI, Cloudflare — spoken to natively through per-provider adapters and wire protocols, or through the Vercel AI SDK fallback.",
+    deep:"Five wire dialects cover the ten adapters: anthropic-messages, openai-chat, openai-responses, gemini, bedrock-converse. The http-recorder package records cassettes of these exchanges for provider tests.",
     files:[["packages/llm/src/providers","10 provider adapters"],
            ["packages/llm/src/protocols/anthropic-messages.ts","Anthropic wire protocol"],
            ["packages/llm/src/protocols/openai-chat.ts","OpenAI wire protocol"]] },
@@ -408,10 +509,12 @@ const B = [
   { id:"lake", n:"Lake", gx:26.6, gy:-6.6, w:2.8, d:2.2, h:22, kind:"tower", dist:"cd", z0:30,
     pkg:"infra/lake.ts", district:"Cloud edge",
     role:"The telemetry lake: Kinesis Firehose delivery into S3 Tables (Iceberg) with a Glue federated catalog, plus an ECS ingest service behind a shared secret.",
+    deep:"Firehose buffers into Iceberg tables through an S3 Tables catalog resource; Athena queries them via a dedicated workgroup; the ingest service runs on an ECS cluster inside its own VPC, fronted by a random secret stored in SSM.",
     files:[["infra/lake.ts","Firehose → S3 Tables → Athena"]] },
   { id:"console", n:"Console", gx:17.8, gy:-2.6, w:2.4, d:2.4, h:34, kind:"tower", dist:"cd", z0:30,
     pkg:"packages/console", district:"Cloud edge",
     role:"Accounts, orgs, and billing: an OpenAuth worker with KV storage at auth.opencode.ai, Stripe products and coupons declared in infra, PlanetScale behind Drizzle.",
+    deep:"Stripe products (Zen Lite / Zen Black tiers), prices, and launch coupons are declared as infra resources in infra/console.ts, with a stripe.WebhookEndpoint pointing back at /stripe/webhook. GitHub and Google OAuth secrets feed the OpenAuth worker.",
     files:[["packages/console/function/src/auth.ts","OpenAuth on Cloudflare"],
            ["packages/console/core","domain + migrations"],
            ["infra/console.ts","DB, secrets, Stripe products"]] },
@@ -423,6 +526,7 @@ const B = [
   { id:"api", n:"api worker", gx:23.8, gy:-2.8, w:2.6, d:2.6, h:42, kind:"tower", dist:"cd", z0:30,
     pkg:"packages/function", district:"Cloud edge",
     role:"The Cloudflare Worker at api.opencode.ai: the share backend (a SyncServer Durable Object fanning out to WebSocket viewers and persisting to R2), GitHub App token exchange, and support bots.",
+    deep:"Routes: share_create, share_delete, share_sync, share_poll, share_data drive the Durable Object; exchange_github_app_token mints installation tokens with @octokit/auth-app + jose; Discord and Feishu support bots hang off the same worker.",
     files:[["packages/function/src/api.ts","Hono app + SyncServer DO"],
            ["infra/app.ts","`Api` worker + bindings"]] },
   { id:"r2", n:"R2", cx:28, cy:-1.4, r:1.1, h:20, kind:"cyl", dist:"st", z0:30,
@@ -447,41 +551,73 @@ const DEPS = [
 ];
 
 const FLOWS = {
-  prompt: { label:"Prompt turn", cls:"f-prompt",
-    intro:"One turn of the agent loop, keypress to model. The reply folds back along the same path: the processor turns stream deltas into message parts, which is where tool calls are born.",
-    outro:"Return path: packages/opencode/src/session/processor.ts folds the stream into message parts.",
+  prompt: { label:"Prompt turn", cls:"f-prompt", cvar:"--fprompt",
+    intro:"One turn of the agent loop, keypress to model. Step through the hops — each shows the function or route that carries the payload, with the files that implement it.",
+    outro:"Return path: packages/opencode/src/session/processor.ts folds the stream into message parts — which is where tool calls are born.",
     hops:[
-      { a:"tui", b:"sdk", t:"createOpencodeClient()", files:[["packages/tui/src/context/sdk.tsx"],["packages/sdk/js/src/v2/client.ts"]] },
-      { a:"sdk", b:"server", t:"POST /session/:id/message", files:[["packages/opencode/src/server/routes/instance/httpapi/groups/session.ts"],["packages/opencode/src/server/routes/instance/httpapi/middleware/instance-context.ts"]] },
-      { a:"server", b:"session", t:"SessionPrompt.prompt → loop", files:[["packages/opencode/src/server/routes/instance/httpapi/handlers/session.ts"],["packages/opencode/src/session/prompt.ts"]] },
-      { a:"session", b:"provider", t:"LLM.stream(request)", files:[["packages/opencode/src/session/llm.ts"],["packages/opencode/src/provider/provider.ts"]] },
-      { a:"provider", b:"ext", t:"provider wire protocol", files:[["packages/llm/src/route/executor.ts"],["packages/llm/src/protocols/anthropic-messages.ts"]] },
+      { a:"tui", b:"sdk", t:"createOpencodeClient()",
+        d:"The TUI's SDK context wires either a worker-RPC fetch (embedded mode) or real HTTP — same client either way.",
+        files:[["packages/tui/src/context/sdk.tsx"],["packages/sdk/js/src/v2/client.ts"]] },
+      { a:"sdk", b:"server", t:"POST /session/:id/message",
+        d:"The instance-context middleware reads x-opencode-directory and routes the request to the right project instance.",
+        files:[["packages/opencode/src/server/routes/instance/httpapi/groups/session.ts"],["packages/opencode/src/server/routes/instance/httpapi/middleware/instance-context.ts"]] },
+      { a:"server", b:"session", t:"SessionPrompt.prompt → loop",
+        d:"The handler admits the prompt durably; the loop assembles system context, history, and the tool set for this turn.",
+        files:[["packages/opencode/src/server/routes/instance/httpapi/handlers/session.ts"],["packages/opencode/src/session/prompt.ts"]] },
+      { a:"session", b:"provider", t:"LLM.stream(request)",
+        d:"Model resolution merges the models.dev catalog with credentials; exactly one stream per provider turn.",
+        files:[["packages/opencode/src/session/llm.ts"],["packages/opencode/src/provider/provider.ts"]] },
+      { a:"provider", b:"ext", t:"provider wire protocol",
+        d:"The native executor encodes the request in the provider's own dialect — anthropic-messages, openai-chat, gemini, bedrock-converse…",
+        files:[["packages/llm/src/route/executor.ts"],["packages/llm/src/protocols/anthropic-messages.ts"]] },
     ]},
-  tools: { label:"Tool loop", cls:"f-tools",
+  tools: { label:"Tool loop", cls:"f-tools", cvar:"--ftools",
     intro:"When the model calls a tool: gate it, run it in the working tree, settle the bounded result, persist. Git snapshots taken around edits make every turn revertible.",
     outro:"Snapshots: packages/opencode/src/snapshot — revert: packages/opencode/src/session/revert.ts.",
     hops:[
-      { a:"session", b:"permission", t:"ruleset check", files:[["packages/opencode/src/permission/evaluate.ts"],["packages/opencode/src/permission/index.ts"]] },
-      { a:"permission", b:"tools", t:"Tool.execute()", files:[["packages/opencode/src/tool/registry.ts"],["packages/opencode/src/session/tools.ts"]] },
-      { a:"tools", b:"workspace", t:"bash · edit · patch", files:[["packages/opencode/src/tool/shell.ts"],["packages/opencode/src/tool/edit.ts"]] },
-      { a:"workspace", b:"sqlite", t:"settle → project parts", files:[["packages/opencode/src/session/processor.ts"],["packages/core/src/session/projector.ts"]] },
+      { a:"session", b:"permission", t:"ruleset check",
+        d:"Rules pattern-match the tool and its arguments; the outcome is allow, deny, or ask — and asks block until a client answers.",
+        files:[["packages/opencode/src/permission/evaluate.ts"],["packages/opencode/src/permission/index.ts"]] },
+      { a:"permission", b:"tools", t:"Tool.execute()",
+        d:"The registry is filtered per agent; MCP and plugin tools join the builtins under the same contract.",
+        files:[["packages/opencode/src/tool/registry.ts"],["packages/opencode/src/session/tools.ts"]] },
+      { a:"tools", b:"workspace", t:"bash · edit · patch",
+        d:"Commands and edits run in your working tree, wrapped in git snapshots.",
+        files:[["packages/opencode/src/tool/shell.ts"],["packages/opencode/src/tool/edit.ts"]] },
+      { a:"workspace", b:"sqlite", t:"settle → project parts",
+        d:"The processor settles the call — oversized output is bounded — and the projector writes parts as rows plus events.",
+        files:[["packages/opencode/src/session/processor.ts"],["packages/core/src/session/projector.ts"]] },
     ]},
-  events: { label:"Event fan-out", cls:"f-events",
+  events: { label:"Event fan-out", cls:"f-events", cvar:"--fevents",
     intro:"Every durable write publishes an event; clients render from the event stream, not from request responses. The embedded TUI receives the same events over worker RPC instead of SSE.",
     outro:"Embedded path: packages/opencode/src/cli/tui/worker.ts emits global.event over RPC.",
     hops:[
-      { a:"session", b:"bus", t:"EventV2.publish", files:[["packages/core/src/event.ts"],["packages/opencode/src/event-v2-bridge.ts"]] },
-      { a:"bus", b:"server", t:"GlobalBus fan-out", files:[["packages/opencode/src/bus/global.ts"]] },
-      { a:"server", b:"sdk", t:"GET /event — SSE", files:[["packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts"]] },
-      { a:"sdk", b:"app", t:"reactive store patch", files:[["packages/app/src/context/server-sync.tsx"],["packages/tui/src/context/sdk.tsx"]] },
+      { a:"session", b:"bus", t:"EventV2.publish",
+        d:"Durable events get aggregate sequence numbers and can be replayed; ephemeral events are live-only.",
+        files:[["packages/core/src/event.ts"],["packages/opencode/src/event-v2-bridge.ts"]] },
+      { a:"bus", b:"server", t:"GlobalBus fan-out",
+        d:"The bridge stamps each event with its Location — directory, project, workspace — and republishes process-wide.",
+        files:[["packages/opencode/src/bus/global.ts"]] },
+      { a:"server", b:"sdk", t:"GET /event — SSE",
+        d:"Server-sent events with a 10-second heartbeat, filtered by directory and workspace.",
+        files:[["packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts"]] },
+      { a:"sdk", b:"app", t:"reactive store patch",
+        d:"Clients patch reactive stores from events — the App through a v2 reducer, the TUI batched into Solid's reactivity.",
+        files:[["packages/app/src/context/server-sync.tsx"],["packages/tui/src/context/sdk.tsx"]] },
     ]},
-  share: { label:"Share sync", cls:"f-share",
+  share: { label:"Share sync", cls:"f-share", cvar:"--fshare",
     intro:"Opting into share streams session, message, and part deltas to api.opencode.ai. A Durable Object persists them to R2 and fans out to WebSocket viewers; opncd.ai renders the shared session.",
     outro:"Share policy (auto / disabled) lives in packages/opencode/src/share/session.ts.",
     hops:[
-      { a:"session", b:"api", t:"share_sync deltas", files:[["packages/opencode/src/share/share-next.ts"],["packages/opencode/src/share/session.ts"]] },
-      { a:"api", b:"r2", t:"SyncServer DO → share/<key>.json", files:[["packages/function/src/api.ts"],["infra/app.ts"]] },
-      { a:"r2", b:"enterprise", t:"read + render", files:[["packages/enterprise/src/core/share.ts"],["packages/enterprise/src/routes/share.tsx"]] },
+      { a:"session", b:"api", t:"share_sync deltas",
+        d:"share-next streams session/info, session/message, and session/part keys whenever sharing is enabled.",
+        files:[["packages/opencode/src/share/share-next.ts"],["packages/opencode/src/share/session.ts"]] },
+      { a:"api", b:"r2", t:"SyncServer DO → R2 put",
+        d:"The Durable Object persists share/<key>.json to R2 and its own storage, then fans out over WebSocket.",
+        files:[["packages/function/src/api.ts"],["infra/app.ts"]] },
+      { a:"r2", b:"enterprise", t:"read + render",
+        d:"opncd.ai reads the share objects from R2 and renders the session read-only.",
+        files:[["packages/enterprise/src/core/share.ts"],["packages/enterprise/src/routes/share.tsx"]] },
     ]},
 };
 
@@ -546,6 +682,7 @@ function labelPos(b) {
 /* ---------- build svg ---------- */
 
 const byId = {}; B.forEach(b => byId[b.id] = b);
+const distById = {}; DISTRICTS.forEach(d => distById[d.id] = d);
 const plateLayer = [], depLayer = [], bldLayer = [], flowLayer = [], labelLayer = [];
 
 for (const d of DISTRICTS) {
@@ -557,11 +694,11 @@ for (const d of DISTRICTS) {
     plateLayer.push(`<polygon class="${d.cls}" fill-opacity="0.22" stroke="none" points="${pts([c[1], b0, c0, c[2]])}"/>`);
     plateLayer.push(`<polygon class="${d.cls}" fill-opacity="0.3" stroke="none" points="${pts([c[3], d0, c0, c[2]])}"/>`);
   }
-  plateLayer.push(`<polygon class="plate ${d.cls}" points="${pts(c)}"/>`);
+  plateLayer.push(`<polygon class="plate ${d.cls}" ${d.name ? `data-dist="${d.id}"` : ""} points="${pts(c)}"/>`);
   if (d.label) {
     const lp = d.lc === "D" ? px(d.gx, d.gy + d.d, d.z) : px(d.gx + d.w, d.gy + d.d, d.z);
     const anch = d.lc === "D" ? "end" : "middle";
-    labelLayer.push(`<text class="dlab" x="${lp[0] - (d.lc === "D" ? 8 : 0)}" y="${lp[1] + (d.lc === "D" ? 4 : 17)}" text-anchor="${anch}">${esc(d.label)}</text>`);
+    labelLayer.push(`<text class="dlab" data-dist="${d.id}" x="${lp[0] - (d.lc === "D" ? 8 : 0)}" y="${lp[1] + (d.lc === "D" ? 4 : 17)}" text-anchor="${anch}">${esc(d.label)}</text>`);
   }
 }
 
@@ -584,15 +721,19 @@ B.slice().sort((a, b) => {
 
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 for (const [fid, f] of Object.entries(FLOWS)) {
-  let seg = "", pathd = "";
+  let segs = "", pathd = "";
   f.hops.forEach((h, i) => {
     const p1 = anchor(byId[h.a]), p2 = anchor(byId[h.b]);
     const dx = p2[0] - p1[0], dy = p2[1] - p1[1], L = Math.hypot(dx, dy) || 1;
     const u = [dx / L, dy / L];
-    const s = [p1[0] + u[0] * 8, p1[1] + u[1] * 8], e = [p2[0] - u[0] * 16, p2[1] - u[1] * 16];
-    seg += `<line x1="${s[0].toFixed(1)}" y1="${s[1].toFixed(1)}" x2="${e[0].toFixed(1)}" y2="${e[1].toFixed(1)}" marker-end="url(#arr-${fid})"/>`;
-    const m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2 - 9];
-    seg += `<text class="hoplab" x="${m[0].toFixed(1)}" y="${m[1].toFixed(1)}" text-anchor="middle">${esc(h.t)}</text>`;
+    const s = [p1[0] + u[0] * 12, p1[1] + u[1] * 12], e = [p2[0] - u[0] * 20, p2[1] - u[1] * 20];
+    /* label offset along the segment normal, always pushed upward */
+    let n = [-u[1], u[0]]; if (n[1] > 0) n = [-n[0], -n[1]];
+    const m = [(p1[0] + p2[0]) / 2 + n[0] * 16, (p1[1] + p2[1]) / 2 + n[1] * 16 - 4];
+    segs += `<g class="hopseg" data-hop="${i}">`
+          + `<line class="hit" x1="${s[0].toFixed(1)}" y1="${s[1].toFixed(1)}" x2="${e[0].toFixed(1)}" y2="${e[1].toFixed(1)}"/>`
+          + `<line x1="${s[0].toFixed(1)}" y1="${s[1].toFixed(1)}" x2="${e[0].toFixed(1)}" y2="${e[1].toFixed(1)}" marker-end="url(#arr-${fid})"/>`
+          + `<text class="hoplab" x="${m[0].toFixed(1)}" y="${m[1].toFixed(1)}" text-anchor="middle">${i + 1}. ${esc(h.t)}</text></g>`;
     pathd += (i === 0 ? `M ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} ` : "") + `L ${p2[0].toFixed(1)} ${p2[1].toFixed(1)} `;
   });
   let dots = "";
@@ -601,17 +742,17 @@ for (const [fid, f] of Object.entries(FLOWS)) {
     for (let k = 0; k < 3; k++)
       dots += `<circle class="dot" r="3.6"><animateMotion dur="${dur}" begin="${(-k * f.hops.length * 0.6).toFixed(1)}s" repeatCount="indefinite" path="${pathd.trim()}"/></circle>`;
   }
-  flowLayer.push(`<g class="flow ${f.cls}" data-flowid="${fid}">${seg}${dots}</g>`);
+  flowLayer.push(`<g class="flow ${f.cls}" data-flowid="${fid}">${segs}${dots}</g>`);
 }
 
 const PAD = 30, PADT = 46;
-const vb = `${(minX - PAD).toFixed(0)} ${(minY - PADT).toFixed(0)} ${(maxX - minX + PAD * 2).toFixed(0)} ${(maxY - minY + PAD + PADT + 14).toFixed(0)}`;
+const fitVB = [minX - PAD, minY - PADT, maxX - minX + PAD * 2, maxY - minY + PAD + PADT + 14];
 const flowColors = { prompt:"var(--fprompt)", tools:"var(--ftools)", events:"var(--fevents)", share:"var(--fshare)" };
 const markers = Object.keys(FLOWS).map(fid =>
   `<marker id="arr-${fid}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${flowColors[fid]}"/></marker>`).join("");
 
 document.getElementById("map").innerHTML =
-`<svg viewBox="${vb}" role="group" aria-label="Isometric system map of the opencode monorepo: client district, local core, contract quarter, workspace, external model APIs, and the floating opencode.ai cloud plate">
+`<svg id="mapsvg" viewBox="${fitVB.map(v => v.toFixed(0)).join(" ")}" role="group" aria-label="Isometric system map of the opencode monorepo: client district, local core, contract quarter, workspace, external model APIs, and the floating opencode.ai cloud plate">
   <defs>
     <pattern id="grid" width="${IW * 2}" height="${IH * 2}" patternUnits="userSpaceOnUse">
       <path class="lattice" d="M 0 0 L ${IW * 2} ${IH * 2} M 0 ${IH * 2} L ${IW * 2} 0" stroke-width="1" fill="none"/>
@@ -621,7 +762,7 @@ document.getElementById("map").innerHTML =
     </pattern>
     ${markers}
   </defs>
-  <rect x="${minX - PAD}" y="${minY - PADT}" width="${maxX - minX + PAD * 2}" height="${maxY - minY + PAD + PADT + 14}" fill="url(#grid)" opacity="1" pointer-events="none"/>
+  <rect x="${(minX - PAD - 400).toFixed(0)}" y="${(minY - PADT - 400).toFixed(0)}" width="${(maxX - minX + PAD * 2 + 800).toFixed(0)}" height="${(maxY - minY + PAD + PADT + 814).toFixed(0)}" fill="url(#grid)" pointer-events="none"/>
   ${plateLayer.join("")}
   ${depLayer.join("")}
   ${bldLayer.join("")}
@@ -643,9 +784,25 @@ document.getElementById("leg-districts").innerHTML =
   .map(s => { const [v, l] = s.split(":");
     return `<div class="it">${mini(`<polygon points="20,8 36,16 20,24 4,16" fill="var(--${v})" fill-opacity="0.15" stroke="var(--${v})" stroke-opacity="0.6"/>`)}${l}</div>`; }).join("");
 
-/* ---------- panel ---------- */
+/* ---------- panel rendering ---------- */
 
 const panel = document.getElementById("panel");
+const narrow = () => matchMedia("(max-width: 980px)").matches;
+
+function snippetHTML(id) {
+  const sn = SNIPPETS[id];
+  if (!sn) return "";
+  const lines = sn.code.split("\n");
+  const w = String(sn.start + lines.length - 1).length;
+  const body = lines.map((l, i) =>
+    `<span class="lno">${String(sn.start + i).padStart(w)} </span>${esc(l)}`).join("\n");
+  return `<div class="sect">Code</div>
+    <details class="code"><summary>▸ <span class="fname">${esc(sn.file)}:${sn.start}</span></summary>
+    <pre><code>${body}</code></pre>
+    <ul class="files" style="margin-top:6px"><li><a href="${GH + sn.file}#L${sn.start}" target="_blank" rel="noopener">view on GitHub →</a></li></ul>
+    </details>`;
+}
+
 const fileList = files => `<ul class="files">` + files.map(f =>
   `<li><a href="${GH + f[0]}" target="_blank" rel="noopener">${esc(f[0])}${f[1] ? `<span class="note">${esc(f[1])}</span>` : ""}</a></li>`).join("") + `</ul>`;
 
@@ -662,12 +819,16 @@ function renderOverview() {
      which runs sessions, gates and executes tools in your repo, and streams model output.</p>
      <p>The floating plate is the entire cloud footprint — sharing, accounts and billing, docs, telemetry.
      None of it is on the prompt path.</p>
-     <p class="dim">Mid-migration: striped roofs are the v2 Effect-native rewrite (schema → protocol → core services,
-     SQLite event store) growing inside the v1 runtime — both are mounted on the same server today.
-     See <b>CONTEXT.md</b> and <b>AGENTS.md</b> at the repo root.</p>
+     <details class="more"><summary>the v2 migration story</summary>
+     <p>Striped roofs are the v2 Effect-native rewrite growing inside the v1 runtime — both are mounted on the
+     same server today. The order of march: <b>schema</b> (pure types) → <b>protocol</b> (declarative HTTP contract) →
+     <b>core</b> (SQLite event store, session projector/runner, credentials) → <b>server</b> (Effect HttpApi handlers) →
+     generated clients. CONTEXT.md at the repo root is the design language for where this lands:
+     durable prompt admission, context epochs, event-sourced sessions.</p></details>
      <div class="sect">How to read</div>
-     <p class="dim">Click a building for its role and source files. Use the trace chips to follow a payload;
-     each hop is labeled with the function or route that carries it.</p>
+     <p class="dim">Tap a <b>building</b> for its role, source files, and a code excerpt. Tap a <b>district name</b>
+     to zoom in and see what lives there. Use the <b>trace chips</b> to follow a payload hop by hop — arrows on the
+     map stay dim until you step onto them.</p>
      <div class="sect">Ground truth</div>
      ${fileList([["sst.config.ts","cloud topology (Cloudflare home, AWS lake)"],["infra/app.ts","Api worker · docs · app hosting"],["CONTEXT.md","session-runtime design language"],["AGENTS.md","package layering rules"]])}`;
 }
@@ -679,51 +840,155 @@ function renderBuilding(b) {
      <p class="eyebrow">${esc(b.district)}${b.v2 ? " · v2 rewrite" : ""}</p>
      <h2>${esc(b.n)}</h2><span class="pkg">${esc(b.pkg)}</span>
      <p>${esc(b.role)}</p>
+     ${b.deep ? `<details class="more"><summary>more detail</summary><p>${esc(b.deep)}</p></details>` : ""}
+     ${snippetHTML(b.id)}
      <div class="sect">Source</div>${fileList(b.files)}
      ${fl.length ? `<div class="sect">On these paths</div><div class="flowchips">` +
         fl.map(([id, f]) => `<button data-flowbtn="${id}">${esc(f.label)}</button>`).join("") + `</div>` : ""}`;
 }
 
-function renderFlow(fid) {
+function renderDistrict(d) {
+  const blds = B.filter(b => {
+    if (b.kind === "cyl") return b.cx >= d.gx && b.cx <= d.gx + d.w && b.cy >= d.gy && b.cy <= d.gy + d.d;
+    return b.gx >= d.gx - 0.5 && b.gx <= d.gx + d.w && b.gy >= d.gy - 0.5 && b.gy <= d.gy + d.d;
+  });
+  panel.innerHTML =
+    `<button class="back" data-back>← overview</button>
+     <p class="eyebrow">District</p><h2>${esc(d.name)}</h2>
+     ${d.pkgs ? d.pkgs.map(p => `<span class="pkg" style="margin-right:4px">${esc(p)}</span>`).join("") : ""}
+     <p style="margin-top:8px">${esc(d.desc || "")}</p>
+     ${blds.length ? `<div class="sect">Buildings here</div><div class="bldchips">` +
+       blds.map(b => `<button data-bldbtn="${b.id}">${esc(b.n)}</button>`).join("") + `</div>` : ""}`;
+}
+
+function renderFlow(fid, hopIdx) {
   const f = FLOWS[fid];
   panel.innerHTML =
     `<button class="back" data-back>← overview</button>
      <p class="eyebrow">Payload trace</p><h2>${esc(f.label)}</h2>
      <p>${esc(f.intro)}</p>
-     <div class="sect">Hops</div>
-     <ol class="hops">` + f.hops.map(h =>
-       `<li><span class="hop-t">${esc(h.t)}</span><br>
+     <div class="stepper">
+       <button data-step="-1" aria-label="Previous hop" ${hopIdx <= 0 ? "disabled" : ""}>‹</button>
+       <span class="pos">hop ${hopIdx + 1} / ${f.hops.length}</span>
+       <button data-step="1" aria-label="Next hop" ${hopIdx >= f.hops.length - 1 ? "disabled" : ""}>›</button>
+     </div>
+     <ol class="hops" style="--hopc: var(${f.cvar})">` + f.hops.map((h, i) =>
+       `<li data-hopli="${i}" class="${i === hopIdx ? "act" : ""}">
+        <span class="hop-t">${i + 1}. ${esc(h.t)}</span><br>
         <span class="hop-route">${esc(byId[h.a].n)} → ${esc(byId[h.b].n)}</span>
-        ${fileList(h.files)}</li>`).join("") +
+        <div class="xtra"><p class="hop-d">${esc(h.d)}</p>${fileList(h.files)}</div>
+        </li>`).join("") +
     `</ol><p class="dim" style="margin-top:10px">${esc(f.outro)}</p>`;
 }
 
-/* ---------- interaction ---------- */
+/* ---------- viewBox zoom / pan ---------- */
 
-let activeFlow = null, activeBld = null;
+const svg = document.getElementById("mapsvg");
+let vb = fitVB.slice();
+const setVB = v => { vb = v; svg.setAttribute("viewBox", v.map(n => n.toFixed(1)).join(" "));
+  svg.classList.toggle("zoomed", v[2] < fitVB[2] * 0.95); };
+let animId = null;
+function animateVB(target) {
+  if (reduced) { setVB(target); return; }
+  cancelAnimationFrame(animId);
+  const from = vb.slice(), t0 = performance.now(), D = 320;
+  const tick = now => {
+    const t = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - t, 3);
+    setVB(from.map((v, i) => v + (target[i] - v) * e));
+    if (t < 1) animId = requestAnimationFrame(tick);
+  };
+  animId = requestAnimationFrame(tick);
+}
+function zoomFactor(f) {
+  const w = Math.min(fitVB[2] * 1.15, Math.max(220, vb[2] * f));
+  const h = w * fitVB[3] / fitVB[2];
+  animateVB([vb[0] + (vb[2] - w) / 2, vb[1] + (vb[3] - h) / 2, w, h]);
+}
+function zoomToDistrict(d) {
+  minX = 1e9; maxX = -1e9; minY = 1e9; maxY = -1e9;
+  px(d.gx, d.gy, d.z); px(d.gx + d.w, d.gy, d.z); px(d.gx + d.w, d.gy + d.d, d.z); px(d.gx, d.gy + d.d, d.z);
+  px(d.gx, d.gy, d.z + 90); px(d.gx + d.w, d.gy + d.d, 0);
+  const m = 40, x = minX - m, y = minY - m, w = maxX - minX + m * 2, h = maxY - minY + m * 2;
+  /* preserve map aspect so text scale stays sane */
+  const ar = fitVB[2] / fitVB[3];
+  const W = Math.max(w, h * ar), H = W / ar;
+  animateVB([x - (W - w) / 2, y - (H - h) / 2, W, H]);
+}
+document.getElementById("z-in").addEventListener("click", () => zoomFactor(0.72));
+document.getElementById("z-out").addEventListener("click", () => zoomFactor(1.4));
+document.getElementById("z-fit").addEventListener("click", () => animateVB(fitVB.slice()));
 
-function setFlow(fid) {
-  activeFlow = fid;
+/* drag to pan when zoomed */
+let drag = null;
+svg.addEventListener("pointerdown", e => {
+  if (!svg.classList.contains("zoomed")) return;
+  drag = { x: e.clientX, y: e.clientY, vb: vb.slice(), moved: false };
+  svg.setPointerCapture(e.pointerId);
+});
+svg.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
+  if (!drag.moved) return;
+  svg.classList.add("dragging");
+  const k = vb[2] / svg.clientWidth;
+  cancelAnimationFrame(animId);
+  setVB([drag.vb[0] - dx * k, drag.vb[1] - dy * k, drag.vb[2], drag.vb[3]]);
+});
+const endDrag = () => { if (drag && drag.moved) suppressClick = true; drag = null; svg.classList.remove("dragging"); };
+let suppressClick = false;
+svg.addEventListener("pointerup", endDrag);
+svg.addEventListener("pointercancel", endDrag);
+
+/* ---------- interaction state ---------- */
+
+let activeFlow = null, activeBld = null, activeHop = 0;
+
+function syncHopClasses() {
+  document.querySelectorAll(".flow").forEach(g => {
+    const on = g.dataset.flowid === activeFlow;
+    g.classList.toggle("on", on);
+    g.querySelectorAll(".hopseg").forEach(seg =>
+      seg.classList.toggle("hact", on && Number(seg.dataset.hop) === activeHop));
+  });
+}
+
+function setFlow(fid, hopIdx) {
+  activeFlow = fid; activeHop = hopIdx || 0;
   document.querySelectorAll(".chip[data-flow]").forEach(c => c.classList.toggle("on", c.dataset.flow === fid));
-  document.querySelectorAll(".flow").forEach(g => g.classList.toggle("on", g.dataset.flowid === fid));
+  syncHopClasses();
   const lit = new Set();
   if (fid) FLOWS[fid].hops.forEach(h => { lit.add(h.a); lit.add(h.b); });
   document.querySelectorAll(".bld").forEach(g => g.classList.toggle("lit", lit.has(g.dataset.id)));
-  if (fid) { setBld(null); renderFlow(fid); } else if (!activeBld) renderOverview();
+  if (fid) { setBld(null, true); renderFlow(fid, activeHop); if (narrow()) panel.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" }); }
+  else if (!activeBld) renderOverview();
 }
 
-function setBld(id) {
+function setHop(i) {
+  if (!activeFlow) return;
+  activeHop = Math.max(0, Math.min(FLOWS[activeFlow].hops.length - 1, i));
+  syncHopClasses(); renderFlow(activeFlow, activeHop);
+}
+
+function setBld(id, keepFlow) {
   activeBld = id;
   document.querySelectorAll(".bld").forEach(g => g.classList.toggle("sel", g.dataset.id === id));
-  if (id) renderBuilding(byId[id]);
+  if (id) { renderBuilding(byId[id]); if (narrow()) panel.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" }); }
 }
 
 document.querySelectorAll(".chip[data-flow]").forEach(c =>
   c.addEventListener("click", () => setFlow(activeFlow === c.dataset.flow ? null : c.dataset.flow)));
 
 document.getElementById("map").addEventListener("click", e => {
+  if (suppressClick) { suppressClick = false; return; }
+  const seg = e.target.closest(".hopseg");
+  if (seg && seg.closest(".flow").classList.contains("on")) { setHop(Number(seg.dataset.hop)); return; }
   const g = e.target.closest(".bld");
   if (g) { setBld(g.dataset.id); return; }
+  const dl = e.target.closest("[data-dist]");
+  if (dl) { const d = distById[dl.dataset.dist];
+    if (d && d.name) { setBld(null); renderDistrict(d); zoomToDistrict(d);
+      if (narrow()) panel.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" }); return; } }
   setBld(null); if (!activeFlow) renderOverview();
 });
 document.getElementById("map").addEventListener("keydown", e => {
@@ -732,10 +997,27 @@ document.getElementById("map").addEventListener("keydown", e => {
   if (g) { e.preventDefault(); setBld(g.dataset.id); }
 });
 panel.addEventListener("click", e => {
-  if (e.target.closest("[data-back]")) { setBld(null); setFlow(null); renderOverview(); return; }
+  if (e.target.closest("[data-back]")) { setBld(null); setFlow(null); renderOverview(); animateVB(fitVB.slice()); return; }
   const fb = e.target.closest("[data-flowbtn]");
-  if (fb) setFlow(fb.dataset.flowbtn);
+  if (fb) { setFlow(fb.dataset.flowbtn); return; }
+  const bb = e.target.closest("[data-bldbtn]");
+  if (bb) { setBld(bb.dataset.bldbtn); return; }
+  const st = e.target.closest("[data-step]");
+  if (st) { setHop(activeHop + Number(st.dataset.step)); return; }
+  const hl = e.target.closest("[data-hopli]");
+  if (hl) setHop(Number(hl.dataset.hopli));
 });
+document.addEventListener("keydown", e => {
+  if (!activeFlow || e.target.closest("input,textarea")) return;
+  if (e.key === "ArrowRight") setHop(activeHop + 1);
+  if (e.key === "ArrowLeft") setHop(activeHop - 1);
+});
+
+/* legend open on wide screens, collapsed on phones */
+document.getElementById("legend").open = !matchMedia("(max-width: 700px)").matches;
+document.getElementById("maphint").textContent = narrow()
+  ? "tap a district name to zoom · drag to pan when zoomed"
+  : "click a district name to zoom in · scroll map sideways if clipped";
 
 renderOverview();
 </script>
